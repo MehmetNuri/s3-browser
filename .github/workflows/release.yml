@@ -205,7 +205,8 @@ jobs:
         with:
           name: packages-snap
           path: artifacts
-      - run: sudo snap install snapcraft --classic
+      # Snapcraft 8 still accepts credentials exported through the web login.
+      - run: sudo snap install snapcraft --classic --channel=8.x/stable
       - name: Upload to the Snap Store
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
