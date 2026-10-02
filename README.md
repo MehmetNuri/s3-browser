@@ -1,0 +1,87 @@
+# S3 Browser
+
+A desktop client for Amazon S3, Supabase Storage, MinIO, Cloudflare R2 and other S3-compatible services. Built with Electron, Svelte 5, TypeScript and Go. The interface supports English and Turkish.
+
+![Browsing a bucket with an image preview](docs/screenshots/browser.png)
+
+| Storage analyzer | Backup jobs | Command palette |
+| --- | --- | --- |
+| ![Storage analyzer](docs/screenshots/analyzer.png) | ![Backup jobs](docs/screenshots/backups.png) | ![Command palette](docs/screenshots/command-palette.png) |
+
+## Features
+
+- Connection profiles and credential-free JSON profile import/export. Secret keys are encrypted with the operating system's credential store when one is available.
+- Browse buckets and objects, create folders, upload (including drag and drop), download, rename and delete objects.
+- Transfer progress, cancellation and retry.
+- Text and image previews, metadata, folder sizes and presigned links with a selectable lifetime.
+- Search a bucket or folder including all subfolders.
+- Folder sync: upload only the new and changed files of a local folder, optionally mirroring deletions to the bucket.
+- Backup jobs: saved folder-to-bucket syncs that run on request or on a schedule while the application is open; each job is add-only or mirror, as chosen by the user.
+- Object versions: list, download, restore and delete versions, and enable or suspend bucket versioning.
+- Find and remove incomplete multipart uploads that silently take up storage.
+- Desktop notification when transfers finish while the window is in the background.
+- Edit HTTP headers (Content-Type, Cache-Control, Content-Disposition, Content-Encoding) of existing objects.
+- Storage analyzer: space by folder, file type, age and storage class, the largest objects, and duplicate objects with the space they waste.
+- Copy or move objects and folders to a bucket of another connection, including other providers and accounts.
+- Edit small text objects in place, with a check that the object did not change meanwhile.
+- Command palette (Ctrl+K) for connections, buckets, files and commands; favorite folders per connection.
+- Light and dark themes that follow the system, keyboard shortcuts, accessible dialogs and reduced-motion animations.
+
+## Supported platforms
+
+Linux packages target Ubuntu, Debian/Pardus, Fedora, Red Hat Enterprise Linux and Arch Linux. Windows uses an installer or portable executable; macOS uses separate Intel and Apple Silicon DMGs. Electron bundles Chromium, so the application does not require WebKitGTK. Successful packaging does not replace testing on each desktop environment.
+
+## System tray
+
+| Desktop | Integration |
+| --- | --- |
+| GNOME | StatusNotifier/AppIndicator host, or an isolated X11 tray process for an existing Tray Icons Reloaded host. |
+| KDE Plasma | StatusNotifierItem with a native context menu. |
+| Windows | Notification area with an ICO icon. |
+| macOS | Menu bar with a template icon and Retina variant. |
+
+The tray menu provides Show window, About, Minimize to tray on close and Quit in English and Turkish. While transfers run, the tray icon turns into an animated arrow for the operation (upload, download, copy or move, sync), the tooltip and menu show progress such as "Uploading 12/340 · 42%", and the icon briefly shows a check mark or a warning when they finish. The taskbar entry shows the same progress where the desktop supports it. Closing exits when no tray host is detected. GNOME users need a compatible tray extension. The default Electron application menu is hidden.
+
+On virtual machines the application uses software rendering. Set `S3BROWSER_DISABLE_GPU=1` to request it explicitly on other systems.
+
+## Development
+
+Use the Node.js LTS version in `.node-version` and Go specified in `backend/go.mod`. The Go backend lives in `backend/`, the Electron host in `desktop/` and the Svelte interface in `frontend/`. Electron and Svelte versions are pinned in their package manifests.
+
+```sh
+npm ci
+npm --prefix frontend ci
+npm run dev
+```
+
+The desktop process launches a local Go backend through private standard-input/output pipes. No local HTTP server is exposed. The renderer uses an isolated preload bridge with an API allowlist; Node.js integration is disabled and sandboxing is enabled.
+
+```sh
+(cd backend && go test -race ./...)
+npm run check
+npm run build
+```
+
+## Packages
+
+```sh
+npm run package:linux
+npm run package:windows
+npm run package:mac
+```
+
+Packages are written to `dist/`. Windows and macOS packages should be built on their respective platforms. `make appimage`, `make deb`, `make rpm` and `make archpkg` build individual Linux formats. RPM needs `rpmbuild`, pacman needs `bsdtar`, and the packaging tool bundled by electron-builder needs `libcrypt.so.1`; on Fedora and RHEL install it with `sudo dnf install libxcrypt-compat rpm-build bsdtar`. Flatpak and Snap targets require their packaging tools and runtimes.
+
+Packaged builds disable Electron's `RunAsNode`, `NODE_OPTIONS` and `--inspect` entry points and load application code only from the ASAR archive.
+
+To launch an AppImage, make it executable and run it. Systems without FUSE can use `--appimage-extract-and-run`.
+
+## Releases
+
+GitHub Actions builds packages on pushes and pull requests. Actions are pinned to commit hashes and updated through Dependabot. A `v*` tag matching the version in `package.json` publishes a release with every package (AppImage, DEB, RPM, pacman, Flatpak bundle, Windows installer and portable executable, macOS Intel and Apple Silicon DMGs) and a `SHA256SUMS` file. Desktop binaries are currently unsigned and macOS builds are not notarized.
+
+## License
+
+S3 Browser is licensed under the [Apache License 2.0](LICENSE). Bundled third-party components, such as Electron, the AWS SDK for Go and Remix Icon, keep their own licenses.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). Contact: info@mehmetnuri.net.

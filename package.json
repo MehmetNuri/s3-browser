@@ -1,0 +1,136 @@
+{
+  "name": "s3-browser",
+  "version": "1.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "Desktop client for S3-compatible storage",
+  "main": "desktop/main.cjs",
+  "author": {
+    "name": "Mehmet Nuri Öztürk",
+    "email": "info@mehmetnuri.net"
+  },
+  "scripts": {
+    "build:backend": "node scripts/build-backend.mjs",
+    "build:frontend": "npm --prefix frontend run build",
+    "check": "npm --prefix frontend run check && node --check desktop/main.cjs && node --check desktop/backend.cjs && node --check desktop/preload.cjs && node --check desktop/tray-helper.cjs && node --check desktop/tray-menu.cjs && node --check desktop/tray-activity.cjs",
+    "build": "npm run build:backend && npm run build:frontend",
+    "dev": "npm run build && electron .",
+    "package:linux": "npm run build && electron-builder --linux AppImage deb rpm pacman --x64 --publish never",
+    "package:windows": "npm run build && electron-builder --win nsis portable --x64 --publish never",
+    "package:mac": "npm run build && electron-builder --mac dmg --publish never",
+    "postinstall": "node node_modules/electron/install.js"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  },
+  "engines": {
+    "node": ">=24.21.0 <25"
+  },
+  "build": {
+    "appId": "dev.s3browser.S3Browser",
+    "productName": "S3 Browser",
+    "copyright": "Copyright © 2026 Mehmet Nuri Öztürk",
+    "asar": true,
+    "electronFuses": {
+      "runAsNode": false,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "onlyLoadAppFromAsar": true,
+      "resetAdHocDarwinSignature": true
+    },
+    "npmRebuild": false,
+    "publish": null,
+    "electronLanguages": [
+      "en-US",
+      "tr"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "packaging/icons"
+    },
+    "files": [
+      "desktop/**/*",
+      "frontend/dist/**/*",
+      "backend/api-methods.json",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "build/backend/${os}-${arch}",
+        "to": "backend"
+      },
+      {
+        "from": "packaging/icons/s3browser-64.png",
+        "to": "tray.png"
+      },
+      {
+        "from": "packaging/icons/trayTemplate.png",
+        "to": "trayTemplate.png"
+      },
+      {
+        "from": "packaging/icons/trayTemplate@2x.png",
+        "to": "trayTemplate@2x.png"
+      },
+      {
+        "from": "packaging/icons/s3browser.ico",
+        "to": "tray.ico"
+      },
+      {
+        "from": "packaging/icons/tray-menu",
+        "to": "tray-menu"
+      }
+    ],
+    "linux": {
+      "icon": "packaging/icons/s3browser-512.png",
+      "category": "Network",
+      "executableName": "s3browser",
+      "artifactName": "S3_Browser-${version}-linux-${arch}.${ext}",
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "s3browser",
+          "Keywords": "s3;storage;bucket;supabase;aws;minio;r2;"
+        }
+      },
+      "syncDesktopName": true
+    },
+    "win": {
+      "icon": "packaging/icons/s3browser.ico",
+      "artifactName": "S3_Browser-${version}-windows-${arch}.${ext}"
+    },
+    "nsis": {
+      "artifactName": "S3_Browser-${version}-windows-${arch}-setup.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    },
+    "portable": {
+      "artifactName": "S3_Browser-${version}-windows-${arch}-portable.${ext}"
+    },
+    "mac": {
+      "icon": "packaging/icons/s3browser-1024.png",
+      "category": "public.app-category.utilities",
+      "artifactName": "S3_Browser-${version}-macos-${arch}.${ext}",
+      "identity": null
+    },
+    "flatpak": {
+      "runtimeVersion": "26.08",
+      "baseVersion": "26.08",
+      "useWaylandFlags": true,
+      "finishArgs": [
+        "--socket=wayland",
+        "--socket=x11",
+        "--share=ipc",
+        "--device=dri",
+        "--share=network",
+        "--filesystem=home",
+        "--filesystem=/media",
+        "--filesystem=/run/media",
+        "--talk-name=org.kde.StatusNotifierWatcher",
+        "--talk-name=org.freedesktop.Notifications"
+      ]
+    }
+  },
+  "homepage": "https://github.com/MehmetNuri/s3-browser",
+  "desktopName": "dev.s3browser.S3Browser"
+}
