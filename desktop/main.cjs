@@ -29,7 +29,7 @@ const S3BROWSER_DEBUG = process.env.S3BROWSER_DEBUG === '1'
 let language = 'en'
 const htmlPath = join(__dirname, '..', 'frontend', 'dist', 'index.html')
 const rendererURL = pathToFileURL(htmlPath).href
-app.setAppUserModelId('dev.s3browser.S3Browser')
+app.setAppUserModelId('io.github.MehmetNuri.s3_browser')
 
 let virtualDisplay = false
 if (process.platform === 'linux') {
