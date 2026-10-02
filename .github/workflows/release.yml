@@ -210,6 +210,8 @@ jobs:
       - name: Upload to the Snap Store
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+          # The credentials were exported through the web login.
+          SNAPCRAFT_STORE_AUTH: candid
         run: |
           if [[ -z "$SNAPCRAFT_STORE_CREDENTIALS" ]]; then
             echo "SNAPCRAFT_STORE_CREDENTIALS secret is not set" >&2
