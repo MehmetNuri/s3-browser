@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=S3 Browser
+Comment=Desktop client for S3-compatible storage
+Comment[tr]=S3 uyumlu depolama için masaüstü istemcisi
+Exec=s3browser %U
+Icon=io.github.MehmetNuri.s3_browser
+Terminal=false
+Categories=Network;FileTransfer;
+Keywords=s3;storage;bucket;supabase;aws;minio;r2;
+StartupWMClass=s3browser

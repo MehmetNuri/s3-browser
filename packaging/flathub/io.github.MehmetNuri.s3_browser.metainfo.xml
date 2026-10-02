@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.MehmetNuri.s3_browser</id>
+  <name>S3 Browser</name>
+  <summary>Browse and manage S3-compatible storage</summary>
+  <summary xml:lang="tr">S3 uyumlu depolamayı gezin ve yönetin</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  <developer id="io.github.mehmetnuri">
+    <name>Mehmet Nuri Öztürk</name>
+  </developer>
+  <description>
+    <p>
+      S3 Browser is a desktop client for Amazon S3, Supabase Storage, MinIO, Cloudflare R2 and
+      other S3-compatible services. The interface is available in English and Turkish.
+    </p>
+    <ul>
+      <li>Browse buckets, upload, download, rename and delete objects, with transfer progress, cancellation and retry</li>
+      <li>Preview text and images, edit small text objects and HTTP headers in place</li>
+      <li>Sync a local folder to a bucket and run saved or scheduled backup jobs</li>
+      <li>List, restore and delete object versions</li>
+      <li>Analyze storage by folder, file type, age and storage class, and find duplicates</li>
+      <li>Copy or move objects between connections, including other providers</li>
+      <li>Search a bucket, open the command palette and keep favorite folders</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.MehmetNuri.s3_browser.desktop</launchable>
+  <url type="homepage">https://github.com/MehmetNuri/s3-browser</url>
+  <url type="bugtracker">https://github.com/MehmetNuri/s3-browser/issues</url>
+  <url type="vcs-browser">https://github.com/MehmetNuri/s3-browser</url>
+  <categories>
+    <category>Network</category>
+    <category>FileTransfer</category>
+  </categories>
+  <keywords>
+    <keyword>s3</keyword>
+    <keyword>storage</keyword>
+    <keyword>bucket</keyword>
+    <keyword>minio</keyword>
+    <keyword>r2</keyword>
+    <keyword>supabase</keyword>
+  </keywords>
+  <branding>
+    <color type="primary" scheme_preference="light">#dbeafe</color>
+    <color type="primary" scheme_preference="dark">#1e3a5f</color>
+  </branding>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <requires>
+    <display_length compare="ge">768</display_length>
+    <internet>always</internet>
+  </requires>
+  <content_rating type="oars-1.1"/>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Browsing a bucket with an image preview</caption>
+      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.0.0/docs/screenshots/browser.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Storage analyzer</caption>
+      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.0.0/docs/screenshots/analyzer.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Backup jobs</caption>
+      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.0.0/docs/screenshots/backups.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Command palette</caption>
+      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.0.0/docs/screenshots/command-palette.png</image>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="1.0.0" date="2026-10-02">
+      <description>
+        <p>First release.</p>
+      </description>
+    </release>
+  </releases>
+</component>
