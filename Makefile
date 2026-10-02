@@ -13,8 +13,11 @@ frontend:
 	npm run build:frontend
 linux:
 	npm run package:linux
-deb rpm archpkg appimage flatpak snap: build
+deb rpm archpkg appimage flatpak: build
 	npx electron-builder --linux $(if $(filter archpkg,$@),pacman,$(if $(filter appimage,$@),AppImage,$@)) --x64 --publish never
+snap: build
+	npx electron-builder --linux dir --x64 --publish never
+	snapcraft
 windows:
 	npm run package:windows
 dmg:

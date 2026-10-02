@@ -129,29 +129,6 @@
         "--talk-name=org.kde.StatusNotifierWatcher",
         "--talk-name=org.freedesktop.Notifications"
       ]
-    },
-    "snapcraft": {
-      "base": "core24",
-      "core24": {
-        "useLXD": true,
-        "summary": "Desktop client for Amazon S3 and S3-compatible storage",
-        "confinement": "strict",
-        "grade": "stable",
-        "plugs": [
-          {
-            "browser-support": {
-              "interface": "browser-support",
-              "allow-sandbox": true
-            }
-          },
-          "network",
-          "home",
-          "removable-media",
-          "unity7",
-          "desktop-legacy",
-          "password-manager-service"
-        ]
-      }
     }
   },
   "homepage": "https://github.com/MehmetNuri/s3-browser",

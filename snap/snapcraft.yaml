@@ -1,0 +1,56 @@
+name: s3browser
+title: S3 Browser
+summary: Desktop client for Amazon S3 and S3-compatible storage
+description: |
+  S3 Browser is a desktop client for Amazon S3, Supabase Storage, MinIO,
+  Cloudflare R2 and other S3-compatible services. Browse buckets, transfer
+  and preview objects, sync and back up folders, manage object versions and
+  analyze storage. The interface is available in English and Turkish.
+license: Apache-2.0
+website: https://github.com/MehmetNuri/s3-browser
+source-code: https://github.com/MehmetNuri/s3-browser
+issues: https://github.com/MehmetNuri/s3-browser/issues
+icon: packaging/icons/s3browser-512.png
+base: core24
+grade: stable
+confinement: strict
+adopt-info: s3browser
+platforms:
+  amd64:
+
+# Chromium's own sandbox needs user namespaces under strict confinement.
+plugs:
+  browser-support:
+    interface: browser-support
+    allow-sandbox: true
+
+apps:
+  s3browser:
+    command: app/s3browser
+    extensions: [gnome]
+    environment:
+      TMPDIR: $XDG_RUNTIME_DIR
+    plugs:
+      - browser-support
+      - network
+      - home
+      - removable-media
+      - unity7
+      - desktop-legacy
+      - password-manager-service
+
+parts:
+  # Packs the application directory produced by `electron-builder --linux dir`.
+  s3browser:
+    plugin: dump
+    source: dist/linux-unpacked
+    organize:
+      '*': app/
+    stage-packages:
+      - libnspr4
+      - libnss3
+      - libxss1
+      - libsecret-1-0
+    override-pull: |
+      craftctl default
+      craftctl set version="$(grep -m1 '"version"' "$CRAFT_PROJECT_DIR/package.json" | cut -d'"' -f4)"

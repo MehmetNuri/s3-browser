@@ -189,11 +189,12 @@ jobs:
       - run: npm ci
       - run: npm --prefix frontend ci
       - run: npm run build
-      - run: npx --no-install electron-builder --linux snap --x64 --publish never
+      - run: npx --no-install electron-builder --linux dir --x64 --publish never
+      - run: snapcraft
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: store-snap
-          path: dist/*.snap
+          path: '*.snap'
           if-no-files-found: error
   snap-store:
     if: startsWith(github.ref, 'refs/tags/v')
