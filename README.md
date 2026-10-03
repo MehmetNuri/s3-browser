@@ -6,7 +6,9 @@ A desktop client for Amazon S3, Supabase Storage, MinIO, Cloudflare R2 and other
 
 ## Screenshots
 
-A short tour of the Flatpak build: [docs/screenshots/demo.webm](docs/screenshots/demo.webm) (35 s, recorded against a local test server with demo data).
+![A short tour of the application](docs/screenshots/demo.gif)
+
+The same tour as a video: [docs/screenshots/demo.webm](docs/screenshots/demo.webm) (35 s, recorded from the Flatpak against a local test server with demo data).
 
 | | |
 | --- | --- |
