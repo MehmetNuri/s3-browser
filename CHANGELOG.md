@@ -4,6 +4,8 @@ All notable changes to S3 Browser are listed here. Versions follow [Semantic Ver
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-03
+
 ### Added
 - Interface in German, French, Spanish, Portuguese, Russian, Arabic (right-to-left) and Chinese, next to English and Turkish.
 - Pull request and issue templates, code of conduct, support guide and this changelog.
@@ -37,6 +39,7 @@ All notable changes to S3 Browser are listed here. Versions follow [Semantic Ver
 
 First release.
 
-[Unreleased]: https://github.com/MehmetNuri/s3-browser/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/MehmetNuri/s3-browser/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/MehmetNuri/s3-browser/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/MehmetNuri/s3-browser/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/MehmetNuri/s3-browser/releases/tag/v1.0.0
