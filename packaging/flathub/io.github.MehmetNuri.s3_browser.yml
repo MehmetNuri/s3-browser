@@ -58,8 +58,8 @@ modules:
     sources:
       - type: git
         url: https://github.com/MehmetNuri/s3-browser.git
-        tag: v1.1.0
-        commit: 1d6351a8c8b24b79177b08cf1ff7e22e495c34a8
+        tag: v1.2.0
+        commit: 0e536a00e62139c705da7ffea7a8325518784e9b
       - type: archive
         only-arches: [x86_64]
         url: https://go.dev/dl/go1.27.1.linux-amd64.tar.gz
