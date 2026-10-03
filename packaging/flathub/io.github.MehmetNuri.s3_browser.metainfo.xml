@@ -4,6 +4,13 @@
   <name>S3 Browser</name>
   <summary>Browse and manage S3-compatible storage</summary>
   <summary xml:lang="tr">S3 uyumlu depolamayı gezin ve yönetin</summary>
+  <summary xml:lang="de">S3-kompatiblen Speicher durchsuchen und verwalten</summary>
+  <summary xml:lang="fr">Parcourir et gérer un stockage compatible S3</summary>
+  <summary xml:lang="es">Explorar y administrar almacenamiento compatible con S3</summary>
+  <summary xml:lang="pt">Navegar e gerenciar armazenamento compatível com S3</summary>
+  <summary xml:lang="ru">Просмотр и управление S3-совместимым хранилищем</summary>
+  <summary xml:lang="ar">تصفّح وإدارة التخزين المتوافق مع S3</summary>
+  <summary xml:lang="zh">浏览和管理 S3 兼容存储</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>Apache-2.0</project_license>
   <developer id="io.github.mehmetnuri">
