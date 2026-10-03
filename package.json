@@ -1,6 +1,6 @@
 {
   "name": "s3-browser",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "license": "Apache-2.0",
   "description": "Desktop client for S3-compatible storage",

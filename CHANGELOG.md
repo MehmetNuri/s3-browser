@@ -4,6 +4,11 @@ All notable changes to S3 Browser are listed here. Versions follow [Semantic Ver
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-10-03
+
+### Fixed
+- The Flatpak build now shows the tray icon on GNOME-style panels: the sandbox uses the X11 socket and the window runs through XWayland, because the Wayland socket with fallback X11 gives the tray helper no display.
+
 ## [1.2.0] - 2026-10-03
 
 ### Added
@@ -39,7 +44,8 @@ All notable changes to S3 Browser are listed here. Versions follow [Semantic Ver
 
 First release.
 
-[Unreleased]: https://github.com/MehmetNuri/s3-browser/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/MehmetNuri/s3-browser/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/MehmetNuri/s3-browser/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/MehmetNuri/s3-browser/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/MehmetNuri/s3-browser/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/MehmetNuri/s3-browser/releases/tag/v1.0.0

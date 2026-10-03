@@ -15,10 +15,10 @@ separate-locales: false
 finish-args:
   - --share=ipc
   - --share=network
-  - --socket=wayland
-  # Flathub refuses wayland together with x11; in Wayland sessions the tray
-  # therefore relies on StatusNotifier and the legacy X11 helper is unavailable.
-  - --socket=fallback-x11
+  # Flathub refuses wayland together with x11. The tray helper for GNOME-style
+  # panels is an X11 client and fallback-x11 grants no X11 socket in a Wayland
+  # session, so the application runs through XWayland (see s3browser.sh).
+  - --socket=x11
   - --device=dri
   # Uploads, downloads, folder sync and backup jobs work on user-chosen local folders.
   - --filesystem=home
