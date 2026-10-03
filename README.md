@@ -106,7 +106,7 @@ npm run package:windows
 npm run package:mac
 ```
 
-Packages are written to `dist/`. Windows and macOS packages should be built on their respective platforms. `make appimage`, `make deb`, `make rpm` and `make archpkg` build individual Linux formats. RPM needs `rpmbuild`, pacman needs `bsdtar`, and the packaging tool bundled by electron-builder needs `libcrypt.so.1`; on Fedora and RHEL install it with `sudo dnf install libxcrypt-compat rpm-build bsdtar`. Flatpak and Snap targets require their packaging tools and runtimes.
+Packages are written to `dist/`. Windows and macOS packages should be built on their respective platforms. `make appimage`, `make deb`, `make rpm` and `make archpkg` build individual Linux formats. RPM needs `rpmbuild`, pacman needs `bsdtar`, and the packaging tool bundled by electron-builder needs `libcrypt.so.1`; on Fedora and RHEL install it with `sudo dnf install libxcrypt-compat rpm-build bsdtar`. Flatpak target requires flatpak-builder and the runtimes.
 
 Packaged builds disable Electron's `RunAsNode`, `NODE_OPTIONS` and `--inspect` entry points and load application code only from the ASAR archive.
 

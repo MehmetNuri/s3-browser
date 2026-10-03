@@ -675,8 +675,11 @@
     window.addEventListener('drop', onDragEnd)
     const offT = EventsOn('transfer', queueTransferEvent)
     const offE = EventsOn('edit', (ev: api.EditEvent) => {
-      if (ev.state === 'uploaded') { notify(t('editUploaded', { name: ev.key.split('/').pop() ?? ev.key })); refresh(true) }
-      else notify(t('editFailed', { name: ev.key.split('/').pop() ?? ev.key, error: ev.error }), true)
+      const name = ev.key.split('/').pop() ?? ev.key
+      if (ev.state === 'uploaded') { notify(t('editUploaded', { name })); refresh(true) }
+      else if (ev.state === 'cancelled') notify(t('editCancelled', { name }), true)
+      else if (ev.state === 'kept') notify(t('editKept', { name, path: ev.error }), true)
+      else notify(t('editFailed', { name, error: ev.error }), true)
     })
     const offM = EventsOn('mount', (ev: api.MountEvent) => {
       loadMounts()

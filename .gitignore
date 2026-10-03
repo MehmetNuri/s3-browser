@@ -6,9 +6,9 @@ build/appimage
 build/flatpak
 build/dmg
 .flatpak-builder
-*.snap
 /s3browser
 .idea/
 frontend/package.json.md5
 
 build/backend
+packaging/flathub/ci-manifest.yml

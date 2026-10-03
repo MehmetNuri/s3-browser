@@ -16,7 +16,8 @@ finish-args:
   - --share=ipc
   - --share=network
   - --socket=wayland
-  - --socket=fallback-x11
+  # The legacy X11 tray helper needs the X11 socket even in a Wayland session.
+  - --socket=x11
   - --device=dri
   # Uploads, downloads, folder sync and backup jobs work on user-chosen local folders.
   - --filesystem=home

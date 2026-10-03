@@ -40,6 +40,8 @@ func init() {
 		"dlgSyncToFolder":          "اختر المجلد الذي ستُنزَّل الكائنات إليه",
 		"notAnObject":              "يمكن فتح الكائنات فقط بتطبيق خارجي",
 		"mountUnsupported":         "الضم غير مدعوم في نظام التشغيل هذا (يتطلب FUSE على Linux أو macFUSE على macOS)",
+		"mountSandboxed":           "لا يمكن الضم داخل بيئة Flatpak المعزولة؛ استخدم حزمة AppImage أو DEB أو RPM",
+		"mountNoFuse":              "FUSE (/dev/fuse) غير متوفر في هذا النظام",
 		"mountNotFound":            "لا يوجد ضم بهذا الاسم",
 		"mountNameInvalid":         "تعذّر اشتقاق اسم لمجلد الضم",
 		"tooManyMounts":            "يمكن أن تكون %d عمليات ضم نشطة على الأكثر",

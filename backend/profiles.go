@@ -241,6 +241,8 @@ type uploadOptions struct {
 	storageClass types.StorageClass
 	encryption   types.ServerSideEncryption
 	kmsKey       string
+	// sameStorage marks a copy whose source and destination profiles reach the same service.
+	sameStorage bool
 }
 
 func (p Profile) uploadOptions() uploadOptions {

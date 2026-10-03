@@ -324,3 +324,26 @@ func TestAclRoundTrip(t *testing.T) {
 		t.Fatalf("bucket acl: %+v, %v", bucketAcl, err)
 	}
 }
+
+func TestSaveTextKeepsPublicAccess(t *testing.T) {
+	srv := newConfigServer()
+	a := connectedApp(t, srv)
+	putObject(t, a, "site/index.html", "<h1>old</h1>")
+	if err := a.SetObjectPublic("test", "site/index.html", true); err != nil {
+		t.Fatal(err)
+	}
+	info, err := a.HeadObject("test", "site/index.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.SaveText("test", "site/index.html", "<h1>new</h1>", info.ETag); err != nil {
+		t.Fatal(err)
+	}
+	s, err := a.GetObjectSettings("test", "site/index.html")
+	if err != nil || !s.Public {
+		t.Fatalf("object lost public access after saving text: %+v, %v", s, err)
+	}
+	if text, _ := a.PreviewText("test", "site/index.html"); text != "<h1>new</h1>" {
+		t.Fatalf("content: %q", text)
+	}
+}

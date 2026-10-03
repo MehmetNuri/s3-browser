@@ -40,6 +40,8 @@ func init() {
 		"dlgSyncToFolder":          "Elija la carpeta donde descargar los objetos",
 		"notAnObject":              "Solo los objetos se pueden abrir con una aplicación externa",
 		"mountUnsupported":         "El montaje no es compatible con este sistema operativo (requiere FUSE en Linux o macFUSE en macOS)",
+		"mountSandboxed":           "No se puede montar dentro del entorno aislado de Flatpak; use el AppImage, DEB o RPM",
+		"mountNoFuse":              "FUSE (/dev/fuse) no está disponible en este sistema",
 		"mountNotFound":            "No existe ese montaje",
 		"mountNameInvalid":         "No se pudo derivar un nombre para la carpeta de montaje",
 		"tooManyMounts":            "Puede haber %d montajes activos como máximo",

@@ -5,10 +5,13 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/smithy-go"
 )
 
 // The encoded image must fit in one desktop protocol message.
@@ -109,10 +112,64 @@ func (a *App) SaveText(bucket, key, content, etag string) error {
 	if contentType == "" {
 		contentType = "text/plain; charset=utf-8"
 	}
-	_, err = c.PutObject(a.ctx, &s3.PutObjectInput{
+	// Tags and a public ACL are not part of a PUT; read them first so they survive.
+	var tagging *string
+	if tags, err := c.GetObjectTagging(a.ctx, &s3.GetObjectTaggingInput{Bucket: aws.String(bucket), Key: aws.String(key)}); err == nil && len(tags.TagSet) > 0 {
+		values := url.Values{}
+		for _, tag := range tags.TagSet {
+			values.Set(aws.ToString(tag.Key), aws.ToString(tag.Value))
+		}
+		tagging = aws.String(values.Encode())
+	}
+	public := false
+	if acl, err := c.GetObjectAcl(a.ctx, &s3.GetObjectAclInput{Bucket: aws.String(bucket), Key: aws.String(key)}); err == nil {
+		public = grantsPublicRead(acl.Grants)
+	}
+	in := &s3.PutObjectInput{
 		Bucket: aws.String(bucket), Key: aws.String(key), Body: strings.NewReader(content),
 		ContentType: aws.String(contentType), CacheControl: head.CacheControl,
 		ContentDisposition: head.ContentDisposition, Metadata: head.Metadata,
-	})
+		StorageClass: head.StorageClass, ServerSideEncryption: head.ServerSideEncryption,
+		SSEKMSKeyId: head.SSEKMSKeyId, BucketKeyEnabled: head.BucketKeyEnabled, Tagging: tagging,
+	}
+	// A conditional write closes the gap between the check above and the
+	// upload: if the object changed meanwhile the service refuses the PUT.
+	if etag != "" {
+		in.IfMatch = aws.String(`"` + etag + `"`)
+	}
+	_, err = c.PutObject(a.ctx, in)
+	if err != nil && in.IfMatch != nil && unsupportedCondition(err) {
+		// The service does not know conditional writes; fall back to the checked ETag.
+		in.IfMatch = nil
+		in.Body = strings.NewReader(content)
+		_, err = c.PutObject(a.ctx, in)
+	}
+	if err != nil {
+		if preconditionFailed(err) {
+			return errors.New(T("objectChanged"))
+		}
+		return describeErr(err)
+	}
+	if public {
+		_, err = c.PutObjectAcl(a.ctx, &s3.PutObjectAclInput{Bucket: aws.String(bucket), Key: aws.String(key), ACL: types.ObjectCannedACLPublicRead})
+	}
 	return describeErr(err)
+}
+
+func preconditionFailed(err error) bool {
+	var ae smithy.APIError
+	return errors.As(err, &ae) && (ae.ErrorCode() == "PreconditionFailed" || ae.ErrorCode() == "ConditionalRequestConflict")
+}
+
+// unsupportedCondition reports a service that rejects If-Match on writes outright.
+func unsupportedCondition(err error) bool {
+	var ae smithy.APIError
+	if !errors.As(err, &ae) {
+		return false
+	}
+	switch ae.ErrorCode() {
+	case "NotImplemented", "NotSupported", "InvalidArgument", "InvalidRequest", "MethodNotAllowed":
+		return true
+	}
+	return false
 }

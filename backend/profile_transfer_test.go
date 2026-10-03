@@ -101,3 +101,51 @@ func TestUploadDefaultsFromProfile(t *testing.T) {
 		t.Fatalf("normalize kept invalid defaults: %+v", p)
 	}
 }
+
+func TestMoveBetweenProfilesOnSameStorageRefusesSameLocation(t *testing.T) {
+	a := connectedApp(t, gofakes3.New(s3mem.New()).Server())
+	putObject(t, a, "docs/keep.txt", "precious")
+	a.mu.RLock()
+	active := a.profile
+	a.mu.RUnlock()
+	// A second profile for the same service and bucket.
+	twin, err := a.SaveProfile(Profile{Name: "twin", Provider: active.Provider, Endpoint: active.Endpoint, Region: active.Region, AccessKey: active.AccessKey, SecretKey: active.SecretKey})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.CopyToProfile("test", "docs/", []string{"docs/keep.txt"}, twin.ID, "test", "docs/", true); err == nil || err.Error() != T("copySameLocation") {
+		t.Fatalf("move onto itself: %v", err)
+	}
+	if text, err := a.PreviewText("test", "docs/keep.txt"); err != nil || text != "precious" {
+		t.Fatalf("object after refused move: %q, %v", text, err)
+	}
+	// Moving to another folder of the same storage still works and keeps the data.
+	if n, err := a.CopyToProfile("test", "docs/", []string{"docs/keep.txt"}, twin.ID, "test", "archive/", true); err != nil || n != 1 {
+		t.Fatalf("move to another folder: %d, %v", n, err)
+	}
+	if text, err := a.PreviewText("test", "archive/keep.txt"); err != nil || text != "precious" {
+		t.Fatalf("moved object: %q, %v", text, err)
+	}
+	if _, err := a.PreviewText("test", "docs/keep.txt"); err == nil {
+		t.Fatal("source survived the move")
+	}
+}
+
+func TestUploadFolderWithUnreadableSubfolderFails(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("root reads everything")
+	}
+	a := connectedApp(t, gofakes3.New(s3mem.New()).Server())
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "ok.txt"), []byte("ok"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	locked := filepath.Join(dir, "locked")
+	if err := os.Mkdir(locked, 0o000); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(locked, 0o700) })
+	if _, err := a.UploadPaths("test", "", []string{dir}); err == nil {
+		t.Fatal("an unreadable subfolder was silently skipped")
+	}
+}

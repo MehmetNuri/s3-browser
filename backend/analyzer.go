@@ -246,9 +246,11 @@ func (a *App) CopyToProfile(bucket, basePrefix string, keys []string, profileID,
 		return 0, err
 	}
 	a.mu.RLock()
-	sameProfile := a.profile.ID == profile.ID
+	sameStorage := a.profile.ID == profile.ID || sameEndpoint(a.profile, profile)
 	a.mu.RUnlock()
-	if sameProfile && dstBucket == bucket && dstPrefix == basePrefix {
+	// Two profiles can point at the same service; copying an object onto
+	// itself and then deleting the "source" would destroy it.
+	if sameStorage && dstBucket == bucket && dstPrefix == basePrefix {
 		return 0, errors.New(T("copySameLocation"))
 	}
 	dst, err := newClient(a.ctx, profile)
@@ -284,9 +286,11 @@ func (a *App) CopyToProfile(bucket, basePrefix string, keys []string, profileID,
 	b := a.startBatch(kind, len(targets))
 	defer b.end()
 	up := manager.NewUploader(dst, func(u *manager.Uploader) { u.PartSize = 8 << 20 })
+	opts := profile.uploadOptions()
+	opts.sameStorage = sameStorage
 	tasks := make([]*transferTask, len(targets))
 	for i, t := range targets {
-		tasks[i] = a.queueCopy(src, up, kind, bucket, t.from, dstBucket, t.to, move, profile.uploadOptions())
+		tasks[i] = a.queueCopy(src, up, kind, bucket, t.from, dstBucket, t.to, move, opts)
 	}
 	var failed atomic.Int64
 	for _, task := range tasks {
@@ -324,10 +328,17 @@ func (a *App) queueCopy(src *s3.Client, up *manager.Uploader, kind, bucket, key,
 		}
 		opts.apply(in)
 		_, err = up.Upload(ctx, in)
-		if err == nil && move {
-			// The source is removed only after its copy was stored.
+		if err == nil && move && !(opts.sameStorage && bucket == dstBucket && key == dstKey) {
+			// The source is removed only after its copy was stored, and never
+			// when the "copy" landed on the source itself.
 			_, err = src.DeleteObject(ctx, &s3.DeleteObjectInput{Bucket: aws.String(bucket), Key: aws.String(key)})
 		}
 		return err
 	})
+}
+
+// sameEndpoint reports whether two profiles address the same storage service.
+func sameEndpoint(a, b Profile) bool {
+	a, b = normalize(a), normalize(b)
+	return strings.EqualFold(a.Endpoint, b.Endpoint) && (a.Endpoint != "" || a.Region == b.Region)
 }

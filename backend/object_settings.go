@@ -132,7 +132,7 @@ func (a *App) copyInPlaceCtx(ctx context.Context, c *s3.Client, bucket, key stri
 		ServerSideEncryption: head.ServerSideEncryption, SSEKMSKeyId: head.SSEKMSKeyId, BucketKeyEnabled: head.BucketKeyEnabled,
 	}
 	change(head, in)
-	if _, err := c.CopyObject(ctx, in); err != nil {
+	if err := serverCopy(ctx, c, in, aws.ToInt64(head.ContentLength)); err != nil {
 		return describeErr(err)
 	}
 	if public {

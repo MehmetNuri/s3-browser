@@ -40,6 +40,8 @@ func init() {
 		"dlgSyncToFolder":          "Ordner wählen, in den die Objekte heruntergeladen werden",
 		"notAnObject":              "Nur Objekte können mit einer externen Anwendung geöffnet werden",
 		"mountUnsupported":         "Das Einbinden wird auf diesem Betriebssystem nicht unterstützt (erfordert FUSE unter Linux oder macFUSE unter macOS)",
+		"mountSandboxed":           "Innerhalb der Flatpak-Sandbox ist kein Einbinden möglich; verwenden Sie AppImage, DEB oder RPM",
+		"mountNoFuse":              "FUSE (/dev/fuse) ist auf diesem System nicht verfügbar",
 		"mountNotFound":            "Keine solche Einbindung",
 		"mountNameInvalid":         "Es konnte kein Name für den Einhängeordner abgeleitet werden",
 		"tooManyMounts":            "Es können höchstens %d Einbindungen aktiv sein",

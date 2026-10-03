@@ -40,6 +40,8 @@ func init() {
 		"dlgSyncToFolder":          "选择下载对象的目标文件夹",
 		"notAnObject":              "只有对象可以用外部应用打开",
 		"mountUnsupported":         "此操作系统不支持挂载（Linux 需要 FUSE，macOS 需要 macFUSE）",
+		"mountSandboxed":           "无法在 Flatpak 沙箱内挂载；请使用 AppImage、DEB 或 RPM 包",
+		"mountNoFuse":              "此系统没有 FUSE（/dev/fuse）",
 		"mountNotFound":            "没有此挂载",
 		"mountNameInvalid":         "无法为挂载文件夹生成名称",
 		"tooManyMounts":            "最多可同时激活 %d 个挂载",

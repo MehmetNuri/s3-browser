@@ -27,6 +27,8 @@ type externalEdit struct {
 	client             *s3.Client
 	opts               uploadOptions
 	stop               chan struct{} // closed when the edit is forgotten
+	unsynced           bool          // the last change could not be uploaded
+	lastAttempt        time.Time
 	modified           time.Time
 	size               int64
 }
@@ -42,6 +44,7 @@ var executableExtensions = map[string]bool{
 var (
 	editWatchInterval = 2 * time.Second
 	editWatchLimit    = 8 * time.Hour
+	editRetryInterval = 30 * time.Second // between attempts after a failed upload
 )
 
 // Each open edit keeps a watcher goroutine and a temporary copy.
@@ -125,14 +128,17 @@ func (a *App) forgetEdit(bucket, key, dir string) {
 	}
 }
 
-// releaseEdit ends one watcher: the entry is dropped only if it still belongs to it.
-func (a *App) releaseEdit(edit *externalEdit) {
+// releaseEdit ends one watcher: the entry is dropped only if it still belongs
+// to it, and the temporary copy is removed unless keep asks to leave it.
+func (a *App) releaseEdit(edit *externalEdit, keep bool) {
 	a.editsMu.Lock()
 	if current := a.edits[edit.bucket+"\x00"+edit.key]; current == edit {
 		delete(a.edits, edit.bucket+"\x00"+edit.key)
 	}
 	a.editsMu.Unlock()
-	os.RemoveAll(filepath.Dir(edit.local))
+	if !keep {
+		os.RemoveAll(filepath.Dir(edit.local))
+	}
 }
 
 // watchEdit polls the file; a change that stayed stable for one interval is
@@ -142,7 +148,15 @@ func (a *App) watchEdit(edit *externalEdit) {
 	ticker := time.NewTicker(editWatchInterval)
 	defer ticker.Stop()
 	deadline := time.After(editWatchLimit)
-	defer a.releaseEdit(edit)
+	defer func() {
+		// A change that never reached the bucket is kept on disk and reported.
+		if edit.unsynced {
+			a.releaseEdit(edit, true)
+			a.emitEvent("edit", EditEvent{Key: edit.key, State: "kept", Error: edit.local})
+			return
+		}
+		a.releaseEdit(edit, false)
+	}()
 	var pending *os.FileInfo
 	for {
 		select {
@@ -158,7 +172,12 @@ func (a *App) watchEdit(edit *externalEdit) {
 		if err != nil || !st.Mode().IsRegular() {
 			continue
 		}
-		if st.ModTime().Equal(edit.modified) && st.Size() == edit.size {
+		changed := !st.ModTime().Equal(edit.modified) || st.Size() != edit.size
+		if !changed {
+			// A failed upload is retried on its own, even without a new change.
+			if edit.unsynced && time.Since(edit.lastAttempt) >= editRetryInterval {
+				a.uploadEdit(edit)
+			}
 			continue
 		}
 		if pending == nil || !(*pending).ModTime().Equal(st.ModTime()) || (*pending).Size() != st.Size() {
@@ -172,11 +191,19 @@ func (a *App) watchEdit(edit *externalEdit) {
 }
 
 func (a *App) uploadEdit(edit *externalEdit) {
+	edit.lastAttempt = time.Now()
 	up := manager.NewUploader(edit.client, func(u *manager.Uploader) { u.PartSize = 8 << 20 })
 	job := uploadJob{local: edit.local, key: edit.key, size: edit.size, modified: edit.modified}
 	err := a.queueUploadQuiet(up, "upload", edit.bucket, job, edit.opts).wait()
 	event := EditEvent{Key: edit.key, State: "uploaded"}
-	if err != nil && !errors.Is(err, context.Canceled) {
+	switch {
+	case err == nil:
+		edit.unsynced = false
+	case errors.Is(err, context.Canceled):
+		edit.unsynced = true
+		event.State = "cancelled"
+	default:
+		edit.unsynced = true
 		event.State, event.Error = "error", describeErr(err).Error()
 	}
 	a.emitEvent("edit", event)

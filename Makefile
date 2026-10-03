@@ -1,4 +1,4 @@
-.PHONY: install build dev test frontend linux deb rpm archpkg appimage flatpak snap windows dmg
+.PHONY: install build dev test frontend linux deb rpm archpkg appimage flatpak windows dmg
 install:
 	npm ci
 	npm --prefix frontend ci
@@ -15,8 +15,6 @@ linux:
 	npm run package:linux
 deb rpm archpkg appimage flatpak: build
 	npx electron-builder --linux $(if $(filter archpkg,$@),pacman,$(if $(filter appimage,$@),AppImage,$@)) --x64 --publish never
-snap:
-	snapcraft
 windows:
 	npm run package:windows
 dmg:

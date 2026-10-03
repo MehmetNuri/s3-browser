@@ -166,49 +166,31 @@ jobs:
           name: packages-flatpak
           path: dist/*.flatpak
           if-no-files-found: error
-  snap:
+  # Builds the Flathub manifest from this checkout (git source replaced by the
+  # working tree), so the offline source lists stay in step with the lockfiles.
+  flathub-manifest:
     needs: check
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: canonical/setup-lxd@8c6a87bfb56aa48f3fb9b830baa18562d8bfd4ee # v1
-      - run: sudo snap install snapcraft --classic
-      # snap/snapcraft.yaml builds the application from source inside the container.
-      - run: snapcraft
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: packages-snap
-          path: '*.snap'
-          if-no-files-found: error
-  snap-store:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: snap
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: packages-snap
-          path: artifacts
-      # Snapcraft 8 still accepts credentials exported through the web login.
-      - run: sudo snap install snapcraft --classic --channel=8.x/stable
-      - name: Upload to the Snap Store
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-          # The credentials were exported through the web login.
-          SNAPCRAFT_STORE_AUTH: candid
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends flatpak flatpak-builder python3-yaml
+      - run: flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+      - name: Write a manifest that builds the checkout
         run: |
-          if [[ -z "$SNAPCRAFT_STORE_CREDENTIALS" ]]; then
-            echo "SNAPCRAFT_STORE_CREDENTIALS secret is not set" >&2
-            exit 1
-          fi
-          snapcraft upload --release=stable artifacts/*.snap
+          python3 - <<'EOF'
+          import yaml
+          m = yaml.safe_load(open('packaging/flathub/io.github.MehmetNuri.s3_browser.yml'))
+          sources = m['modules'][0]['sources']
+          sources[0] = {'type': 'dir', 'path': '../..', 'skip': ['.git', '.flatpak-builder', 'node_modules', 'frontend/node_modules', 'dist', 'build']}
+          yaml.safe_dump(m, open('packaging/flathub/ci-manifest.yml', 'w'), sort_keys=False)
+          EOF
+      - run: flatpak-builder --user --force-clean --disable-rofiles-fuse --install-deps-from=flathub build/flathub-ci packaging/flathub/ci-manifest.yml
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [packages, flatpak, snap]
+    needs: [check, audit, packages, flatpak]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:

@@ -438,12 +438,20 @@ func (a *App) CopyObject(bucket, src, dst string) error {
 }
 
 func (a *App) copyObject(c *s3.Client, bucket, src, dst string) error {
-	_, err := c.CopyObject(a.ctx, &s3.CopyObjectInput{
+	head, err := c.HeadObject(a.ctx, &s3.HeadObjectInput{Bucket: aws.String(bucket), Key: aws.String(src)})
+	if err != nil {
+		return describeErr(err)
+	}
+	in := &s3.CopyObjectInput{
 		Bucket:     aws.String(bucket),
 		CopySource: aws.String(copySource(bucket, src)),
 		Key:        aws.String(dst),
-	})
-	return describeErr(err)
+		// A multipart copy needs the attributes spelled out; a plain copy keeps them anyway.
+		Metadata: head.Metadata, ContentType: head.ContentType, CacheControl: head.CacheControl,
+		ContentDisposition: head.ContentDisposition, ContentEncoding: head.ContentEncoding,
+		StorageClass: head.StorageClass, ServerSideEncryption: head.ServerSideEncryption, SSEKMSKeyId: head.SSEKMSKeyId,
+	}
+	return describeErr(serverCopy(a.ctx, c, in, aws.ToInt64(head.ContentLength)))
 }
 
 func (a *App) RenameObject(bucket, src, dst string) error {
@@ -644,17 +652,25 @@ func collectUploads(prefix string, paths []string) ([]uploadJob, error) {
 		base := filepath.Dir(p)
 		// Symbolic links, devices and pipes inside a folder are not uploaded:
 		// links can point outside the selection and special files can block.
-		_ = filepath.WalkDir(p, func(fp string, d os.DirEntry, err error) error {
-			if err == nil && d.Type().IsRegular() {
+		// An unreadable folder stops the walk: a mirror sync would otherwise
+		// treat its files as deleted and remove their copies from the bucket.
+		err = filepath.WalkDir(p, func(fp string, d os.DirEntry, err error) error {
+			if err != nil {
+				return fmt.Errorf("%s: %w", fp, err)
+			}
+			if d.Type().IsRegular() {
 				info, err := d.Info()
 				if err != nil {
-					return nil
+					return fmt.Errorf("%s: %w", fp, err)
 				}
 				rel, _ := filepath.Rel(base, fp)
 				jobs = append(jobs, uploadJob{fp, prefix + filepath.ToSlash(rel), info.Size(), info.ModTime()})
 			}
 			return nil
 		})
+		if err != nil {
+			return nil, err
+		}
 	}
 	return jobs, nil
 }

@@ -40,6 +40,8 @@ func init() {
 		"dlgSyncToFolder":          "Выберите папку для скачивания объектов",
 		"notAnObject":              "Во внешнем приложении можно открывать только объекты",
 		"mountUnsupported":         "Монтирование не поддерживается в этой операционной системе (нужен FUSE в Linux или macFUSE в macOS)",
+		"mountSandboxed":           "Монтирование невозможно в песочнице Flatpak; используйте AppImage, DEB или RPM",
+		"mountNoFuse":              "FUSE (/dev/fuse) недоступен в этой системе",
 		"mountNotFound":            "Такого монтирования нет",
 		"mountNameInvalid":         "Не удалось подобрать имя для папки монтирования",
 		"tooManyMounts":            "Одновременно может быть активно не более %d монтирований",

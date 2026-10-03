@@ -47,6 +47,12 @@ func (a *App) MountBucket(bucket, prefix string, readOnly bool) (Mount, error) {
 	if bucket == "" {
 		return Mount{}, errors.New(T("bucketRequired"))
 	}
+	if _, err := os.Stat("/.flatpak-info"); err == nil {
+		return Mount{}, errors.New(T("mountSandboxed"))
+	}
+	if _, err := os.Stat("/dev/fuse"); err != nil {
+		return Mount{}, errors.New(T("mountNoFuse"))
+	}
 	prefix = strings.TrimLeft(prefix, "/")
 	if prefix != "" && !strings.HasSuffix(prefix, "/") {
 		prefix += "/"
