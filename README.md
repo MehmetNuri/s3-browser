@@ -6,6 +6,8 @@ A desktop client for Amazon S3, Supabase Storage, MinIO, Cloudflare R2 and other
 
 ## Screenshots
 
+A short tour of the Flatpak build: [docs/screenshots/demo.webm](docs/screenshots/demo.webm) (35 s, recorded against a local test server with demo data).
+
 | | |
 | --- | --- |
 | **Transfer queue** — concurrency and bandwidth limits, pause, reorder, retry ![Transfer queue](docs/screenshots/transfers.png) | **Bucket settings** — encryption, Object Lock, public access, versioning ![Bucket settings](docs/screenshots/bucket-settings.png) |
