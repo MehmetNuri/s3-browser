@@ -1,0 +1,23 @@
+name: Provider compatibility report
+description: Report how S3 Browser works with a storage provider
+labels: [provider]
+body:
+  - type: input
+    id: provider
+    attributes:
+      label: Provider and region
+      placeholder: Hetzner Object Storage, fsn1
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: S3 capabilities report
+      description: Open "S3 capabilities", run the test and use "Copy report". It contains no credentials.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: What worked and what did not

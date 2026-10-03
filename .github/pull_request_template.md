@@ -12,5 +12,5 @@
 ## Checklist
 
 - [ ] No credentials, generated packages or `node_modules` in the diff
-- [ ] Documentation and `CHANGELOG`/release notes updated when user-visible
+- [ ] `CHANGELOG.md` has an entry under Unreleased when the change is user-visible
 - [ ] Security constraints in `SECURITY.md` still hold (renderer isolation, path containment, allowlisted IPC)

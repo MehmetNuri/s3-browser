@@ -1,0 +1,49 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: About → Version, and the package (AppImage, DEB, RPM, Flatpak, Windows, macOS).
+      placeholder: 1.1.0, AppImage
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system and desktop
+      placeholder: Fedora 42, GNOME 48 (Wayland)
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Storage provider
+      options: [Amazon S3, MinIO, Cloudflare R2, Supabase Storage, Backblaze B2, Wasabi, DigitalOcean Spaces, Other S3-compatible]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1.
+        2.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Start the application with `S3BROWSER_DEBUG=1` and paste the relevant lines. Never paste access keys, secret keys or session tokens.
+      render: text
