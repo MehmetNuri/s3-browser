@@ -16,8 +16,9 @@ finish-args:
   - --share=ipc
   - --share=network
   - --socket=wayland
-  # The legacy X11 tray helper needs the X11 socket even in a Wayland session.
-  - --socket=x11
+  # Flathub refuses wayland together with x11; in Wayland sessions the tray
+  # therefore relies on StatusNotifier and the legacy X11 helper is unavailable.
+  - --socket=fallback-x11
   - --device=dri
   # Uploads, downloads, folder sync and backup jobs work on user-chosen local folders.
   - --filesystem=home
@@ -58,7 +59,7 @@ modules:
       - type: git
         url: https://github.com/MehmetNuri/s3-browser.git
         tag: v1.1.0
-        # commit: fill in with the commit the tag points to
+        commit: 1d6351a8c8b24b79177b08cf1ff7e22e495c34a8
       - type: archive
         only-arches: [x86_64]
         url: https://go.dev/dl/go1.27.1.linux-amd64.tar.gz
