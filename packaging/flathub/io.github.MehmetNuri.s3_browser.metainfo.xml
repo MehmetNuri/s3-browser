@@ -63,22 +63,27 @@
   <screenshots>
     <screenshot type="default">
       <caption>Browsing a bucket with an image preview</caption>
-      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.2.0/docs/screenshots/browser.png</image>
+      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.2.1/docs/screenshots/browser.png</image>
     </screenshot>
     <screenshot>
       <caption>Storage analyzer</caption>
-      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.2.0/docs/screenshots/analyzer.png</image>
+      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.2.1/docs/screenshots/analyzer.png</image>
     </screenshot>
     <screenshot>
       <caption>Backup jobs</caption>
-      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.2.0/docs/screenshots/backups.png</image>
+      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.2.1/docs/screenshots/backups.png</image>
     </screenshot>
     <screenshot>
       <caption>Command palette</caption>
-      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.2.0/docs/screenshots/command-palette.png</image>
+      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.2.1/docs/screenshots/command-palette.png</image>
     </screenshot>
   </screenshots>
   <releases>
+    <release version="1.2.1" date="2026-10-03">
+      <description>
+        <p>The Flatpak shows its tray icon on GNOME-style panels.</p>
+      </description>
+    </release>
     <release version="1.2.0" date="2026-10-03">
       <description>
         <p>Interface in nine languages including right-to-left Arabic, conditional text saves, multipart server-side copies above 5 GB, retried editor uploads and safer cross-connection moves and folder uploads.</p>
