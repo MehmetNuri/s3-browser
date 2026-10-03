@@ -132,6 +132,19 @@
       ]
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MehmetNuri/s3-browser.git"
+  },
+  "bugs": "https://github.com/MehmetNuri/s3-browser/issues",
+  "keywords": [
+    "s3",
+    "minio",
+    "cloudflare-r2",
+    "supabase",
+    "object-storage",
+    "electron"
+  ],
   "homepage": "https://github.com/MehmetNuri/s3-browser",
   "desktopName": "io.github.MehmetNuri.s3_browser"
 }
