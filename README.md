@@ -49,7 +49,7 @@ All screenshots were taken against a local S3-compatible test server with demo d
 
 ## Installation
 
-Download the file for your system from the [latest release](https://github.com/MehmetNuri/s3-browser/releases/latest); `SHA256SUMS` lists every checksum.
+Download the file for your system from the [latest release](https://github.com/MehmetNuri/s3_browser/releases/latest); `SHA256SUMS` lists every checksum.
 
 | System | File | Install |
 | --- | --- | --- |

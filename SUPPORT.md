@@ -1,7 +1,7 @@
 # Support
 
-- **Questions and ideas:** [GitHub Discussions](https://github.com/MehmetNuri/s3-browser/discussions).
-- **Bugs and feature requests:** [GitHub Issues](https://github.com/MehmetNuri/s3-browser/issues/new/choose); the templates ask for what is needed.
+- **Questions and ideas:** [GitHub Discussions](https://github.com/MehmetNuri/s3_browser/discussions).
+- **Bugs and feature requests:** [GitHub Issues](https://github.com/MehmetNuri/s3_browser/issues/new/choose); the templates ask for what is needed.
 - **A provider that behaves differently:** run "S3 capabilities" in the application and attach the report to a provider compatibility issue.
 - **Security vulnerabilities:** follow [SECURITY.md](SECURITY.md); do not open a public issue.
 - **Documentation:** [README](README.md) and [CONTRIBUTING](CONTRIBUTING.md).
