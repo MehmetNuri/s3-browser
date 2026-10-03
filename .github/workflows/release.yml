@@ -204,7 +204,8 @@ jobs:
         with:
           persist-credentials: false
       # elfutils provides eu-strip, which flatpak-builder runs on the built binaries.
-      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends flatpak flatpak-builder elfutils python3-yaml
+      # appstream-compose and the SVG pixbuf loader serve flatpak-builder's AppStream step.
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends flatpak flatpak-builder elfutils appstream-compose librsvg2-common python3-yaml
       - run: flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
       - name: Write a manifest that builds the checkout
         run: |
@@ -219,8 +220,8 @@ jobs:
       - name: Show the AppStream compose report
         if: failure()
         run: |
-          flatpak run --user --filesystem=host --command=appstreamcli org.freedesktop.Sdk//26.08 compose --verbose --prefix=/ --origin=ci --result-root=build/compose-out build/flathub-ci/files || true
-          find build/flathub-ci/files/share -maxdepth 3 \( -path '*applications*' -o -path '*metainfo*' -o -path '*icons/hicolor/*apps*' \) -type f | sort
+          appstreamcli compose --verbose --print-report=full --prefix=/ --origin=ci --result-root=build/compose-out build/flathub-ci/files || true
+          find build/flathub-ci/files/share -maxdepth 6 \( -path '*applications*' -o -path '*metainfo*' -o -path '*icons/hicolor/*' \) -type f | sort
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [check, audit, packages, flatpak]
