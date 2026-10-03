@@ -260,7 +260,7 @@ func T(key string, args ...any) string {
 	return s
 }
 
-// SetLanguage switches backend messages ("tr" or "en").
+// SetLanguage switches backend messages to one of the registered languages.
 func (a *App) SetLanguage(lang string) {
 	if _, ok := messages[lang]; ok {
 		currentLang.Store(lang)

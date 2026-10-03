@@ -111,7 +111,7 @@
   .st { width: 130px; }
   .name { width: 34%; overflow: hidden; text-overflow: ellipsis; }
   .detail { word-break: break-word; }
-  .ms { width: 70px; text-align: right; }
+  .ms { width: 70px; text-align: end; }
   .pill { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
   .pill.ok { background: var(--success-soft); color: var(--success); }
   .pill.unsupported { background: var(--warn-soft); color: var(--warn); }

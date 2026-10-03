@@ -1,6 +1,6 @@
 # Contributing
 
-Use English for documentation, code comments, issues and pull requests. The application supports English and Turkish; keep both translation dictionaries in sync.
+Use English for documentation, code comments, issues and pull requests. The application is translated into nine languages (see README); keep all translation dictionaries in sync.
 
 ## Development
 

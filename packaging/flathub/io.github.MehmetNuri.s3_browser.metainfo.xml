@@ -12,7 +12,7 @@
   <description>
     <p>
       S3 Browser is a desktop client for Amazon S3, Supabase Storage, MinIO, Cloudflare R2 and
-      other S3-compatible services. The interface is available in English and Turkish.
+      other S3-compatible services. The interface is available in nine languages.
     </p>
     <ul>
       <li>Browse buckets, upload, download, rename and delete objects, with transfer progress, cancellation and retry</li>

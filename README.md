@@ -1,6 +1,6 @@
 # S3 Browser
 
-A desktop client for Amazon S3, Supabase Storage, MinIO, Cloudflare R2 and other S3-compatible services. Built with Electron, Svelte 5, TypeScript and Go. The interface supports English and Turkish.
+A desktop client for Amazon S3, Supabase Storage, MinIO, Cloudflare R2 and other S3-compatible services. Built with Electron, Svelte 5, TypeScript and Go. The interface is available in nine languages, including right-to-left Arabic.
 
 ![Browsing a bucket](docs/screenshots/browser.png)
 
@@ -16,7 +16,8 @@ A desktop client for Amazon S3, Supabase Storage, MinIO, Cloudflare R2 and other
 | **Image preview** — previews and object details in the side panel ![Image preview](docs/screenshots/image-preview.png) | **Versions** — list, download, restore and delete object versions ![Versions](docs/screenshots/versions.png) |
 | **HTTP headers** — Content-Type, Cache-Control, Content-Disposition, Content-Encoding ![Edit headers](docs/screenshots/headers.png) | **Copy to another connection** — also across providers and accounts ![Copy to](docs/screenshots/copy-to.png) |
 | **Folder sync** — upload or download direction, with optional mirroring ![Folder sync](docs/screenshots/sync.png) | **Upload menu** — files, folders or drag and drop ![Upload menu](docs/screenshots/upload-menu.png) |
-| **Light theme** — follows the system theme ![Light theme](docs/screenshots/light-theme.png) | **Turkish interface** — English and Turkish, switchable at runtime ![Turkish](docs/screenshots/turkish.png) |
+| **Light theme** — follows the system theme ![Light theme](docs/screenshots/light-theme.png) | **Language menu** — nine languages, switchable at runtime ![Language menu](docs/screenshots/language-menu.png) |
+| **Arabic, right-to-left** — the whole layout mirrors ![Arabic interface](docs/screenshots/arabic.png) | **Turkish interface** ![Turkish interface](docs/screenshots/turkish.png) |
 
 All screenshots were taken against a local S3-compatible test server with demo data.
 
@@ -44,6 +45,23 @@ All screenshots were taken against a local S3-compatible test server with demo d
 - Edit small text objects in place, with a check that the object did not change meanwhile.
 - Command palette (Ctrl+K) for connections, buckets, files and commands; favorite folders per connection.
 - Light and dark themes that follow the system, keyboard shortcuts, accessible dialogs and reduced-motion animations.
+- Multi-language support: English, Turkish, German, French, Spanish, Portuguese, Russian, Arabic and Chinese, with a right-to-left layout for Arabic. The language follows the system and can be changed at runtime; backend messages and the tray menu follow it.
+
+## Multi-language support
+
+| Language | Code | Direction |
+| --- | --- | --- |
+| English | `en` | left-to-right |
+| Türkçe | `tr` | left-to-right |
+| Deutsch | `de` | left-to-right |
+| Français | `fr` | left-to-right |
+| Español | `es` | left-to-right |
+| Português | `pt` | left-to-right |
+| Русский | `ru` | left-to-right |
+| العربية | `ar` | right-to-left |
+| 中文 | `zh` | left-to-right |
+
+The first language of the system that is on this list is used; the language menu at the bottom of the sidebar changes it at any time. Choosing Arabic mirrors the whole layout. Each language is one file under `frontend/src/locales/` (interface) and `backend/i18n_<code>.go` (messages from the Go backend); the TypeScript `Dict` type makes a missing key a compile error, and a backend test checks the Go message sets. The tray menu and transfer status words live in `desktop/tray-menu.cjs`.
 
 ## Supported platforms
 
@@ -58,7 +76,7 @@ Linux packages target Ubuntu, Debian/Pardus, Fedora, Red Hat Enterprise Linux an
 | Windows | Notification area with an ICO icon. |
 | macOS | Menu bar with a template icon and Retina variant. |
 
-The tray menu provides Show window, About, Minimize to tray on close and Quit in English and Turkish. While transfers run, the tray icon turns into an animated arrow for the operation (upload, download, copy or move, sync), the tooltip and menu show progress such as "Uploading 12/340 · 42%", and the icon briefly shows a check mark or a warning when they finish. The taskbar entry shows the same progress where the desktop supports it. Closing exits when no tray host is detected. GNOME users need a compatible tray extension. The default Electron application menu is hidden.
+The tray menu provides Show window, About, Minimize to tray on close and Quit in the interface language. While transfers run, the tray icon turns into an animated arrow for the operation (upload, download, copy or move, sync), the tooltip and menu show progress such as "Uploading 12/340 · 42%", and the icon briefly shows a check mark or a warning when they finish. The taskbar entry shows the same progress where the desktop supports it. Closing exits when no tray host is detected. GNOME users need a compatible tray extension. The default Electron application menu is hidden.
 
 On virtual machines the application uses software rendering. Set `S3BROWSER_DISABLE_GPU=1` to request it explicitly on other systems.
 

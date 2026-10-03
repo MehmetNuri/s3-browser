@@ -192,15 +192,15 @@
 </div>
 
 <style>
-  .transfers { position: absolute; right: 12px; bottom: 40px; width: 620px; max-width: calc(100% - 24px); max-height: 55%; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); z-index: 20; overflow: hidden; }
+  .transfers { position: absolute; inset-inline-end: 12px; bottom: 40px; width: 620px; max-width: calc(100% - 24px); max-height: 55%; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); z-index: 20; overflow: hidden; }
   .thead { display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--border); }
-  .summary { font-size: 12px; margin-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .summary { font-size: 12px; margin-inline-start: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .limit { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
   .limit select { font-size: 12px; padding: 2px 4px; }
   .tbar { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-bottom: 1px solid var(--border); font-size: 12px; }
   .tabs { display: flex; gap: 2px; }
   .tabs .on { background: var(--panel2); color: var(--text-strong); }
-  .paused { color: var(--danger-text); margin-right: 6px; }
+  .paused { color: var(--danger-text); margin-inline-end: 6px; }
   .tlist { overflow: auto; padding: 4px 0; }
   .trow { display: grid; grid-template-columns: 18px minmax(0, 1fr) 110px 150px 64px; gap: 8px; align-items: center; padding: 5px 12px; font-size: 12px; }
   .trow.queued { opacity: .75; cursor: grab; }
@@ -210,7 +210,7 @@
   .dropend.target { border-color: var(--accent); color: var(--text); }
   .tk.upload { color: var(--accent); } .tk.download { color: var(--info); } .tk.copy, .tk.move { color: var(--success); } .tk.sync { color: var(--accent); }
   .tname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tstate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+  .tstate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: end; }
   .tacts { display: flex; justify-content: flex-end; gap: 2px; }
   .bar { height: 4px; background: var(--panel2); border-radius: 99px; overflow: hidden; }
   .fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width .15s; }

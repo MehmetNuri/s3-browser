@@ -141,3 +141,6 @@ i[class^="ri-"], i[class*=" ri-"] { font-size: 16px; line-height: 1; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* Numbers with units and object keys stay left-to-right inside right-to-left interfaces. */
+:root[dir='rtl'] td.r, :root[dir='rtl'] .tstate, :root[dir='rtl'] .mono { direction: ltr; unicode-bidi: isolate; }

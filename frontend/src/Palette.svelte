@@ -67,6 +67,6 @@
   .list button[aria-selected='true'] { background: var(--panel2); }
   .list i { color: var(--muted); }
   .label { overflow: hidden; text-overflow: ellipsis; }
-  .hint { margin-left: auto; padding-left: 12px; font-size: 11px; font-weight: 400; }
+  .hint { margin-inline-start: auto; padding-inline-start: 12px; font-size: 11px; font-weight: 400; }
   p { margin: 0; padding: 14px; text-align: center; }
 </style>

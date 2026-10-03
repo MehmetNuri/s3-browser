@@ -199,19 +199,19 @@
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 14px; }
   .card { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; min-width: 0; }
   h4 { margin: 0 0 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-  .hint { margin-left: 6px; font-weight: 400; text-transform: none; letter-spacing: 0; }
+  .hint { margin-inline-start: 6px; font-weight: 400; text-transform: none; letter-spacing: 0; }
   p { margin: 0; }
 
   .row { display: grid; grid-template-columns: minmax(0, 150px) minmax(40px, 1fr) 76px 64px; align-items: center; gap: 10px; padding: 4px 0; font-size: 12px; }
   .label, .link { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .link { display: block; min-height: 0; padding: 0; border: none; background: none; box-shadow: none; text-align: left; color: var(--text); max-width: 100%; }
+  .link { display: block; min-height: 0; padding: 0; border: none; background: none; box-shadow: none; text-align: start; color: var(--text); max-width: 100%; }
   .link:hover:not(:disabled) { background: none; color: var(--accent); }
-  .link i { margin-right: 6px; color: var(--accent); vertical-align: -2px; }
+  .link i { margin-inline-end: 6px; color: var(--accent); vertical-align: -2px; }
   .track { height: 8px; }
   .bar { display: block; height: 100%; min-width: 2px; border-radius: 0 4px 4px 0; background: var(--accent); }
   .row:hover .bar { background: var(--accent2); }
-  .value { text-align: right; color: var(--text-strong); white-space: nowrap; }
-  .count { text-align: right; }
+  .value { text-align: end; color: var(--text-strong); white-space: nowrap; }
+  .count { text-align: end; }
 
   table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
   td { padding: 4px 0; border-top: 1px solid var(--row-border); white-space: nowrap; }

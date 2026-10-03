@@ -5,7 +5,8 @@ description: |
   S3 Browser is a desktop client for Amazon S3, Supabase Storage, MinIO,
   Cloudflare R2 and other S3-compatible services. Browse buckets, transfer
   and preview objects, sync and back up folders, manage object versions and
-  analyze storage. The interface is available in English and Turkish.
+  analyze storage. The interface is available in nine languages, including
+  right-to-left Arabic.
 license: Apache-2.0
 website: https://github.com/MehmetNuri/s3-browser
 source-code: https://github.com/MehmetNuri/s3-browser
