@@ -84,8 +84,11 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm audit --audit-level=high || true
       - run: npm --prefix frontend audit --audit-level=high
+  # Packages are built for pushes to main, tags and manual runs; pull requests
+  # only need the required checks, which keeps them to a couple of minutes.
   packages:
     needs: check
+    if: github.event_name != 'pull_request'
     strategy:
       fail-fast: false
       matrix:
@@ -119,6 +122,17 @@ jobs:
         with:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
+      - name: Cache Electron downloads
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install RPM and pacman packaging tools
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends rpm libarchive-tools
@@ -146,6 +160,7 @@ jobs:
           if-no-files-found: error
   flatpak:
     needs: check
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -180,6 +195,8 @@ jobs:
   # working tree), so the offline source lists stay in step with the lockfiles.
   flathub-manifest:
     needs: check
+    # Takes a long time (SDK, extensions and every pinned source are fetched); tags and manual runs only.
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
