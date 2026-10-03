@@ -7,6 +7,8 @@ All notable changes to S3 Browser are listed here. Versions follow [Semantic Ver
 ### Added
 - Interface in German, French, Spanish, Portuguese, Russian, Arabic (right-to-left) and Chinese, next to English and Turkish.
 - Pull request and issue templates, code of conduct, support guide and this changelog.
+- Desktop entry comments and the AppStream summary in every interface language.
+- Installation table and data locations in the README; security notes for external editing, mounts and CloudFront.
 
 ### Changed
 - Snap packaging was removed; Linux packages are AppImage, DEB, RPM, pacman and a Flatpak bundle.

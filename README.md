@@ -47,6 +47,31 @@ All screenshots were taken against a local S3-compatible test server with demo d
 - Light and dark themes that follow the system, keyboard shortcuts, accessible dialogs and reduced-motion animations.
 - Multi-language support: English, Turkish, German, French, Spanish, Portuguese, Russian, Arabic and Chinese, with a right-to-left layout for Arabic. The language follows the system and can be changed at runtime; backend messages and the tray menu follow it.
 
+## Installation
+
+Download the file for your system from the [latest release](https://github.com/MehmetNuri/s3-browser/releases/latest); `SHA256SUMS` lists every checksum.
+
+| System | File | Install |
+| --- | --- | --- |
+| Any Linux distribution | `S3_Browser-<version>-linux-x86_64.AppImage` | `chmod +x` and run; systems without FUSE can use `--appimage-extract-and-run` |
+| Ubuntu, Debian, Pardus | `S3_Browser-<version>-linux-amd64.deb` | `sudo apt install ./S3_Browser-<version>-linux-amd64.deb` |
+| Fedora, RHEL | `S3_Browser-<version>-linux-x86_64.rpm` | `sudo dnf install ./S3_Browser-<version>-linux-x86_64.rpm` |
+| Arch Linux | `S3_Browser-<version>-linux-x64.pacman` | `sudo pacman -U S3_Browser-<version>-linux-x64.pacman` |
+| Flatpak | `S3_Browser-<version>-linux-x86_64.flatpak` | `flatpak install ./S3_Browser-<version>-linux-x86_64.flatpak` (mounting a bucket is not available inside the Flatpak sandbox) |
+| Windows | `S3_Browser-<version>-windows-x64-setup.exe` or `-portable.exe` | Run the installer, or the portable executable without installing |
+| macOS, Apple Silicon | `S3_Browser-<version>-macos-arm64.dmg` | Open the DMG and drag the app to Applications; mounting needs [macFUSE](https://macfuse.github.io) |
+| macOS, Intel | `S3_Browser-<version>-macos-x64.dmg` | Same as above |
+
+The binaries are unsigned and the macOS builds are not notarized, so Windows SmartScreen and macOS Gatekeeper ask for confirmation on first launch.
+
+### Where data is kept
+
+| Data | Location |
+| --- | --- |
+| Connection profiles, settings, backup jobs | `~/.config/s3browser/` on Linux, `~/Library/Application Support/s3browser/` on macOS, `%AppData%\s3browser\` on Windows (About → Open config folder) |
+| Mount points | `~/S3 Browser/<connection>-<bucket>/`, created on mount and removed on unmount |
+| Copies opened with an external application | A private folder under the system temporary directory, removed when the application exits |
+
 ## Multi-language support
 
 | Language | Code | Direction |
