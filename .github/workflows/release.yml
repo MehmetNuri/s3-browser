@@ -34,6 +34,16 @@ jobs:
         with:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
+      # GitHub's branch-name rules need an organization plan; the convention from CONTRIBUTING.md is enforced here.
+      - name: Check branch name
+        if: github.event_name == 'pull_request'
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          if [[ ! "$BRANCH" =~ ^(dependabot/.+|(feature|fix|chore|docs|ci|release)/[a-z0-9][a-z0-9._-]*)$ ]]; then
+            echo "Branch name '$BRANCH' must look like feature/short-description (types: feature, fix, chore, docs, ci, release)" >&2
+            exit 1
+          fi
       - run: npm ci
       - run: npm --prefix frontend ci
       - run: npm run check
