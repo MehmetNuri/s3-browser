@@ -89,7 +89,15 @@
       "desktop": {
         "entry": {
           "StartupWMClass": "s3browser",
-          "Keywords": "s3;storage;bucket;supabase;aws;minio;r2;"
+          "Keywords": "s3;storage;bucket;supabase;aws;minio;r2;",
+          "Comment[tr]": "S3 uyumlu depolama için masaüstü istemcisi",
+          "Comment[de]": "Desktop-Client für S3-kompatiblen Speicher",
+          "Comment[fr]": "Client de bureau pour le stockage compatible S3",
+          "Comment[es]": "Cliente de escritorio para almacenamiento compatible con S3",
+          "Comment[pt]": "Cliente de desktop para armazenamento compatível com S3",
+          "Comment[ru]": "Настольный клиент для S3-совместимых хранилищ",
+          "Comment[ar]": "عميل سطح مكتب للتخزين المتوافق مع S3",
+          "Comment[zh]": "S3 兼容存储的桌面客户端"
         }
       },
       "syncDesktopName": true
