@@ -120,4 +120,4 @@ GitHub Actions builds packages on pushes and pull requests. Actions are pinned t
 
 S3 Browser is licensed under the [Apache License 2.0](LICENSE). Bundled third-party components, such as Electron, the AWS SDK for Go and Remix Icon, keep their own licenses.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). Contact: info@mehmetnuri.net.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SUPPORT.md](SUPPORT.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), [CHANGELOG.md](CHANGELOG.md) and [SECURITY.md](SECURITY.md). Contact: info@mehmetnuri.net.
