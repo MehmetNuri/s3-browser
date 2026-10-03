@@ -102,10 +102,11 @@ func (a *App) MountBucket(bucket, prefix string, readOnly bool) (Mount, error) {
 	a.mounts[id] = &bucketMount{info: info, server: server}
 	go func() {
 		server.Wait()
+		_ = os.Remove(dir) // only succeeds when nothing is mounted there anymore
+		// The mount disappears from the list only after its folder is gone.
 		a.mountsMu.Lock()
 		delete(a.mounts, id)
 		a.mountsMu.Unlock()
-		_ = os.Remove(dir) // only succeeds when nothing is mounted there anymore
 		a.emitEvent("mount", MountEvent{ID: id, State: "unmounted"})
 	}()
 	a.emitEvent("mount", MountEvent{ID: id, State: "mounted"})
