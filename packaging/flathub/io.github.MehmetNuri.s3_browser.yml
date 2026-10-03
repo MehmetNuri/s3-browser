@@ -57,7 +57,7 @@ modules:
       - for size in 64 128 256 512; do install -Dm644 packaging/icons/s3browser-$size.png /app/share/icons/hicolor/${size}x${size}/apps/io.github.MehmetNuri.s3_browser.png; done
     sources:
       - type: git
-        url: https://github.com/MehmetNuri/s3-browser.git
+        url: https://github.com/MehmetNuri/s3_browser.git
         tag: v1.2.1
         commit: d2bb250f69784f7fb3f6c97cf83c66904e1c2ab7
       - type: archive

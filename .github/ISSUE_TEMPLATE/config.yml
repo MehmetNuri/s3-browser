@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability
-    url: https://github.com/MehmetNuri/s3-browser/blob/main/SECURITY.md
+    url: https://github.com/MehmetNuri/s3_browser/blob/main/SECURITY.md
     about: Please do not open a public issue for vulnerabilities; follow SECURITY.md.
   - name: Question or discussion
-    url: https://github.com/MehmetNuri/s3-browser/discussions
+    url: https://github.com/MehmetNuri/s3_browser/discussions
     about: Ask questions and share ideas in Discussions.

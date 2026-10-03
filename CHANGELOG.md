@@ -44,8 +44,8 @@ All notable changes to S3 Browser are listed here. Versions follow [Semantic Ver
 
 First release.
 
-[Unreleased]: https://github.com/MehmetNuri/s3-browser/compare/v1.2.1...HEAD
-[1.2.1]: https://github.com/MehmetNuri/s3-browser/compare/v1.2.0...v1.2.1
-[1.2.0]: https://github.com/MehmetNuri/s3-browser/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/MehmetNuri/s3-browser/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/MehmetNuri/s3-browser/releases/tag/v1.0.0
+[Unreleased]: https://github.com/MehmetNuri/s3_browser/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/MehmetNuri/s3_browser/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/MehmetNuri/s3_browser/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/MehmetNuri/s3_browser/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/MehmetNuri/s3_browser/releases/tag/v1.0.0

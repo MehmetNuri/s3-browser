@@ -142,9 +142,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/MehmetNuri/s3-browser.git"
+    "url": "https://github.com/MehmetNuri/s3_browser.git"
   },
-  "bugs": "https://github.com/MehmetNuri/s3-browser/issues",
+  "bugs": "https://github.com/MehmetNuri/s3_browser/issues",
   "keywords": [
     "s3",
     "minio",
@@ -153,6 +153,6 @@
     "object-storage",
     "electron"
   ],
-  "homepage": "https://github.com/MehmetNuri/s3-browser",
+  "homepage": "https://github.com/MehmetNuri/s3_browser",
   "desktopName": "io.github.MehmetNuri.s3_browser"
 }
