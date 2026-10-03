@@ -33,6 +33,14 @@ func allowedMethods() (map[string]bool, error) {
 	return allowed, nil
 }
 
+// debugf writes a diagnostic line to stderr when S3BROWSER_DEBUG is set.
+// Stdout stays reserved for protocol messages.
+func debugf(format string, args ...any) {
+	if os.Getenv("S3BROWSER_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, format+"\n", args...)
+	}
+}
+
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -69,6 +77,7 @@ func main() {
 			_ = host.Send(response)
 		}()
 	})
+	a.unmountAll()
 	cancel()
 	workers.Wait()
 	if err != nil {

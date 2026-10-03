@@ -11,15 +11,15 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	runtime "s3browser/internal/desktop"
 )
 
 type SyncResult struct {
-	Uploaded int `json:"uploaded"`
-	Skipped  int `json:"skipped"`
-	Failed   int `json:"failed"`
-	Deleted  int `json:"deleted"` // mirror mode only
+	Uploaded   int `json:"uploaded"`
+	Downloaded int `json:"downloaded"`
+	Skipped    int `json:"skipped"`
+	Failed     int `json:"failed"`
+	Deleted    int `json:"deleted"` // mirror mode only
 }
 
 // SyncFolder uploads the files of a local folder that are missing or changed
@@ -34,10 +34,10 @@ func (a *App) SyncFolder(bucket, prefix string, mirror bool) (SyncResult, error)
 	if err != nil || dir == "" {
 		return SyncResult{}, err
 	}
-	return a.syncDirectory(c, bucket, prefix, dir, mirror)
+	return a.syncDirectory(c, bucket, prefix, dir, mirror, a.activeUploadOptions())
 }
 
-func (a *App) syncDirectory(c *s3.Client, bucket, prefix, dir string, mirror bool) (SyncResult, error) {
+func (a *App) syncDirectory(c *s3.Client, bucket, prefix, dir string, mirror bool, opts uploadOptions) (SyncResult, error) {
 	// The batch starts without a total while both sides are compared.
 	b := a.startBatch("sync", 0)
 	defer b.end()
@@ -78,7 +78,7 @@ func (a *App) syncDirectory(c *s3.Client, bucket, prefix, dir string, mirror boo
 	}
 	result := SyncResult{Skipped: len(jobs) - len(changed)}
 	b.setTotal(len(changed))
-	result.Failed = a.runUploads(c, bucket, changed, b)
+	result.Failed = a.runUploads(c, bucket, changed, b, opts)
 	result.Uploaded = len(changed) - result.Failed
 	if result.Failed > 0 {
 		return result, b.failure("uploadFailed")
@@ -233,30 +233,16 @@ func (a *App) UpdateObjectHeaders(bucket, key string, headers ObjectHeaders) err
 	if headers.ContentType == "" {
 		headers.ContentType = "application/octet-stream"
 	}
-	head, err := c.HeadObject(a.ctx, &s3.HeadObjectInput{Bucket: aws.String(bucket), Key: aws.String(key)})
-	if err != nil {
-		return describeErr(err)
+	optional := func(value string) *string {
+		if value == "" {
+			return nil
+		}
+		return aws.String(value)
 	}
-	in := &s3.CopyObjectInput{
-		Bucket:            aws.String(bucket),
-		Key:               aws.String(key),
-		CopySource:        aws.String(copySource(bucket, key)),
-		MetadataDirective: types.MetadataDirectiveReplace,
-		Metadata:          head.Metadata,
-		ContentType:       aws.String(headers.ContentType),
-		StorageClass:      head.StorageClass,
-	}
-	if headers.CacheControl != "" {
-		in.CacheControl = aws.String(headers.CacheControl)
-	}
-	if headers.ContentDisposition != "" {
-		in.ContentDisposition = aws.String(headers.ContentDisposition)
-	}
-	if headers.ContentEncoding != "" {
-		in.ContentEncoding = aws.String(headers.ContentEncoding)
-	}
-	_, err = c.CopyObject(a.ctx, in)
-	return describeErr(err)
+	return a.copyInPlace(c, bucket, key, func(_ *s3.HeadObjectOutput, in *s3.CopyObjectInput) {
+		in.ContentType = aws.String(headers.ContentType)
+		in.CacheControl, in.ContentDisposition, in.ContentEncoding = optional(headers.CacheControl), optional(headers.ContentDisposition), optional(headers.ContentEncoding)
+	})
 }
 
 // Search stops at these limits so a huge bucket cannot occupy the backend indefinitely.

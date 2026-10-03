@@ -11,14 +11,17 @@
   import About from './About.svelte'
   import Modal from './Modal.svelte'
   import HeadersModal from './HeadersModal.svelte'
+  import BucketSettings from './BucketSettings.svelte'
+  import ObjectSettings from './ObjectSettings.svelte'
   import CopyModal from './CopyModal.svelte'
   import Analyzer from './Analyzer.svelte'
   import Backups from './Backups.svelte'
+  import Transfers from './Transfers.svelte'
   import Palette, { type Command } from './Palette.svelte'
   import logo from './assets/images/logo.png'
   import { t, i18n, languages, setLang, syncBackend } from './i18n.svelte'
 
-  type Transfer = { id: number; kind: string; name: string; done: number; total: number; state: string; error: string }
+  type Transfer = api.Transfer
 
   let profiles = $state<main.Profile[]>([])
   let active = $state<main.Profile | null>(null)
@@ -62,9 +65,8 @@
   let info = $state<main.ObjectInfo | null>(null)
   let preview = $state('')
   let transfers = $state<Transfer[]>([])
+  let queue = $state<api.TransferQueue>({ limit: 4, paused: false, queued: 0, running: 0, failed: 0, done: 0, speed: 0, bandwidthKBps: 0 })
   let showTransfers = $state(false)
-  let pendingTransferActions = $state<Set<number>>(new Set())
-  let pendingCancellations = $state<Set<number>>(new Set())
   let sortBy = $state<'name' | 'size' | 'modified'>('name')
   let sortAsc = $state(true)
   let previewImage = $state('')
@@ -72,6 +74,12 @@
   let versions = $state<api.ObjectVersion[] | null>(null)
   let versioning = $state<string | null>(null) // null: unknown or not supported
   let editingHeaders = $state(false)
+  let bucketSettings = $state(false)
+  let uploadOpen = $state(false)
+  let mounts = $state<api.Mount[]>([])
+  let mountOpen = $state(false)
+  let currentMount = $derived(mounts.find((m) => m.profileId === active?.id && m.bucket === bucket && m.prefix === (prefix || '')) ?? null)
+  let objectSettings = $state(false)
   let dragging = $state(false)
   let dialog = $state<{ title: string; text?: string; input?: boolean; options?: { value: string; label: string }[]; optionsLabel?: string; notes?: Record<string, string>; dangerValue?: string; cancel?: boolean; value?: string; danger?: boolean; ok: string; resolve: (v: string | null) => void } | null>(null)
 
@@ -131,23 +139,48 @@
     return (n / 1024 ** i).toFixed(i ? 1 : 0) + ' ' + u[i]
   }
 
+  // Remix Icon names by extension; the chip colour comes from the icon family.
   const extIcons: Record<string, string> = {
-    png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image', svg: 'image',
-    mp4: 'video', mov: 'video', webm: 'video', mkv: 'video',
-    mp3: 'music-2', wav: 'music-2', ogg: 'music-2',
-    zip: 'file-zip', gz: 'file-zip', tar: 'file-zip', '7z': 'file-zip', rar: 'file-zip',
-    pdf: 'file-pdf-2', json: 'braces', js: 'file-code', ts: 'file-code', html: 'file-code', css: 'file-code', go: 'file-code',
-    txt: 'file-text', md: 'markdown', csv: 'file-excel-2', xlsx: 'file-excel-2', docx: 'file-word-2',
+    png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image', svg: 'image', bmp: 'image', ico: 'image', tif: 'image', tiff: 'image', heic: 'image', avif: 'image', psd: 'image', raw: 'image',
+    mp4: 'video', mov: 'video', webm: 'video', mkv: 'video', avi: 'video', m4v: 'video', wmv: 'video', flv: 'video', ts: 'file-code',
+    mp3: 'music-2', wav: 'music-2', ogg: 'music-2', flac: 'music-2', aac: 'music-2', m4a: 'music-2', wma: 'music-2', opus: 'music-2',
+    zip: 'file-zip', gz: 'file-zip', tgz: 'file-zip', tar: 'file-zip', '7z': 'file-zip', rar: 'file-zip', bz2: 'file-zip', xz: 'file-zip', zst: 'file-zip', jar: 'file-zip', war: 'file-zip', apk: 'file-zip',
+    pdf: 'file-pdf-2',
+    json: 'braces', yaml: 'braces', yml: 'braces', toml: 'braces', xml: 'braces', ini: 'braces', conf: 'braces', cfg: 'braces', env: 'braces', properties: 'braces', pom: 'braces', gradle: 'braces', lock: 'braces',
+    js: 'file-code', mjs: 'file-code', cjs: 'file-code', jsx: 'file-code', tsx: 'file-code', html: 'file-code', htm: 'file-code', css: 'file-code', scss: 'file-code', less: 'file-code', vue: 'file-code', svelte: 'file-code',
+    go: 'file-code', rs: 'file-code', py: 'file-code', rb: 'file-code', php: 'file-code', java: 'file-code', kt: 'file-code', kts: 'file-code', scala: 'file-code', c: 'file-code', h: 'file-code', cpp: 'file-code', hpp: 'file-code', cs: 'file-code', swift: 'file-code', m: 'file-code', dart: 'file-code', lua: 'file-code', pl: 'file-code', r: 'file-code', sql: 'file-code', graphql: 'file-code', proto: 'file-code',
+    sh: 'terminal-box', bash: 'terminal-box', zsh: 'terminal-box', fish: 'terminal-box', ps1: 'terminal-box', bat: 'terminal-box', cmd: 'terminal-box', makefile: 'terminal-box',
+    exe: 'install', msi: 'install', dmg: 'install', pkg: 'install', deb: 'install', rpm: 'install', appimage: 'install', snap: 'install', flatpak: 'install', bin: 'cpu', so: 'cpu', dll: 'cpu', dylib: 'cpu', wasm: 'cpu', iso: 'disc', img: 'disc', vmdk: 'disc', qcow2: 'disc',
+    txt: 'file-text', log: 'file-text', md: 'markdown', markdown: 'markdown', rst: 'file-text', rtf: 'file-text', tex: 'file-text', nfo: 'file-text',
+    csv: 'file-excel-2', tsv: 'file-excel-2', xlsx: 'file-excel-2', xls: 'file-excel-2', ods: 'file-excel-2', numbers: 'file-excel-2',
+    docx: 'file-word-2', doc: 'file-word-2', odt: 'file-word-2', pages: 'file-word-2', pptx: 'file-ppt-2', ppt: 'file-ppt-2', odp: 'file-ppt-2', key: 'file-ppt-2',
+    md5: 'fingerprint', sha1: 'fingerprint', sha256: 'fingerprint', sha512: 'fingerprint', sig: 'fingerprint', asc: 'fingerprint', gpg: 'fingerprint', pem: 'key-2', crt: 'key-2', cer: 'key-2', p12: 'key-2', pfx: 'key-2', pub: 'key-2',
+    ttf: 'font-family', otf: 'font-family', woff: 'font-family', woff2: 'font-family', eot: 'font-family',
+    sqlite: 'database-2', db: 'database-2', parquet: 'database-2', avro: 'database-2', orc: 'database-2', bak: 'database-2', dump: 'database-2',
+    epub: 'book-2', mobi: 'book-2', azw3: 'book-2', ics: 'calendar-line', vcf: 'contacts-book-2', torrent: 'download-cloud-2',
+  }
+  // Files named by convention rather than by extension.
+  const nameIcons: Record<string, string> = {
+    dockerfile: 'ship', containerfile: 'ship', makefile: 'terminal-box', license: 'file-text', readme: 'markdown', changelog: 'markdown', '.gitignore': 'git-branch', '.dockerignore': 'ship', '.env': 'braces', '.editorconfig': 'braces',
   }
   // Colour family of the icon chip in the file list.
   const kinds: Record<string, string> = {
-    image: 'image', video: 'video', 'music-2': 'audio', 'file-zip': 'archive', 'file-pdf-2': 'pdf', braces: 'code', 'file-code': 'code',
-    'file-text': 'doc', markdown: 'doc', 'file-excel-2': 'sheet', 'file-word-2': 'doc',
+    image: 'image', video: 'video', 'music-2': 'audio', 'file-zip': 'archive', 'file-pdf-2': 'pdf', braces: 'code', 'file-code': 'code', 'terminal-box': 'code', ship: 'code', 'git-branch': 'code',
+    'file-text': 'doc', markdown: 'doc', 'file-excel-2': 'sheet', 'file-word-2': 'doc', 'file-ppt-2': 'pdf', fingerprint: 'other', 'key-2': 'archive', install: 'archive', cpu: 'other', disc: 'other',
+    'font-family': 'doc', 'database-2': 'sheet', 'book-2': 'doc', 'calendar-line': 'doc', 'contacts-book-2': 'doc', 'download-cloud-2': 'archive',
+  }
+  function iconName(name: string) {
+    const lower = name.toLowerCase()
+    // "Dockerfile.jvm" and "README.tr" are still a Dockerfile and a readme.
+    const base = lower.split('.')[0] || lower
+    if (nameIcons[lower]) return nameIcons[lower]
+    if (nameIcons[base] && (lower === base || lower.startsWith(base + '.'))) return nameIcons[base]
+    const ext = lower.includes('.') ? lower.slice(lower.lastIndexOf('.') + 1) : ''
+    return extIcons[ext] ?? 'file'
   }
   function fileKind(name: string) {
-    return kinds[extIcons[name.split('.').pop()?.toLowerCase() ?? ''] ?? ''] ?? 'other'
+    return kinds[iconName(name)] ?? 'other'
   }
-
   // "3 hours ago" for recent changes, a short date otherwise; the exact time stays in the tooltip.
   function relativeTime(stamp: string) {
     if (!stamp) return ''
@@ -163,8 +196,11 @@
     return date.toLocaleDateString(i18n.lang, { year: 'numeric', month: 'short', day: 'numeric' })
   }
 
+  // Most Remix icons come in a -line variant; a few exist only in one weight.
+  const singleWeightIcons = new Set(['font-family'])
   function fileIcon(name: string) {
-    return `ri-${extIcons[name.split('.').pop()?.toLowerCase() ?? ''] ?? 'file'}-line`
+    const icon = iconName(name)
+    return icon.endsWith('-line') || singleWeightIcons.has(icon) ? `ri-${icon}` : `ri-${icon}-line`
   }
 
   async function loadProfiles() { profiles = (await guard(api.ListProfiles)) ?? [] }
@@ -341,9 +377,6 @@
     showInfo(i.key)
   }
 
-  const transferIcons: Record<string, string> = {
-    upload: 'ri-upload-2-line', download: 'ri-download-2-line', copy: 'ri-file-transfer-line', move: 'ri-file-transfer-line', sync: 'ri-loop-right-line',
-  }
   const imageExtensions = /\.(png|jpe?g|gif|webp|bmp)$/i
   let infoSeq = 0
   async function showInfo(key: string) {
@@ -383,6 +416,8 @@
         action('upload', t('uploadFile'), 'ri-upload-2-line', () => upload(false)),
         action('uploadFolder', t('uploadFolder'), 'ri-folder-upload-line', () => upload(true)),
         action('sync', t('syncFolder'), 'ri-loop-right-line', sync),
+        action('bucketSettings', t('bucketSettings'), 'ri-settings-3-line', () => (bucketSettings = true)),
+        action('mount', t('mountBucket'), 'ri-hard-drive-2-line', mountCurrent),
         action('folder', t('newFolder'), 'ri-folder-add-line', newFolder),
         action('refresh', t('refresh'), 'ri-refresh-line', () => refresh()),
         action('favorite', isFavorite ? t('removeFavorite') : t('addFavorite'), 'ri-star-line', toggleFavorite),
@@ -450,13 +485,21 @@
     const b = bucket, p = prefix
     const mode = await ask({
       title: t('syncFolder'), text: t('syncModeText'), optionsLabel: t('syncMode'), value: 'add', ok: t('chooseFolder'),
-      options: [{ value: 'add', label: t('modeAdd') }, { value: 'mirror', label: t('modeMirror') }],
-      notes: { add: t('modeAddHint'), mirror: t('modeMirrorHint') }, dangerValue: 'mirror',
+      options: [
+        { value: 'add', label: t('modeAdd') }, { value: 'mirror', label: t('modeMirror') },
+        { value: 'download', label: t('modeDownload') }, { value: 'downloadMirror', label: t('modeDownloadMirror') },
+      ],
+      notes: { add: t('modeAddHint'), mirror: t('modeMirrorHint'), download: t('modeDownloadHint'), downloadMirror: t('modeDownloadMirrorHint') },
+      dangerValue: 'mirror,downloadMirror',
     })
     if (mode === null) return
-    const res = await guard(() => api.SyncFolder(b, p, mode === 'mirror'))
-    if (res && (res.uploaded || res.skipped || res.deleted)) {
-      notify(mode === 'mirror' ? t('syncDoneMirror', { u: res.uploaded, s: res.skipped, d: res.deleted }) : t('syncDone', { u: res.uploaded, s: res.skipped }))
+    const down = mode.startsWith('download'), mirror = mode.endsWith('irror')
+    const res = await guard(() => down ? api.SyncToFolder(b, p, mirror) : api.SyncFolder(b, p, mirror))
+    if (res && (res.uploaded || res.downloaded || res.skipped || res.deleted)) {
+      const n = down ? res.downloaded : res.uploaded
+      notify(down
+        ? (mirror ? t('syncDownDoneMirror', { n, s: res.skipped, d: res.deleted }) : t('syncDownDone', { n, s: res.skipped }))
+        : (mirror ? t('syncDoneMirror', { u: n, s: res.skipped, d: res.deleted }) : t('syncDone', { u: n, s: res.skipped })))
     }
     refresh(true)
   }
@@ -519,32 +562,80 @@
     if (url && await act(() => api.CopyToClipboard(url))) notify(t('presignCopied'))
   }
 
-  let activeTransfers = $derived(transfers.filter((t) => t.state === 'running').length)
+  let activeTransfers = $derived(queue.running + queue.queued)
 
-  async function transferAction(id: number, retry = false) {
-    if (retry ? pendingTransferActions.has(id) : pendingCancellations.has(id)) return
-    if (retry) pendingTransferActions = new Set([...pendingTransferActions, id])
-    else pendingCancellations = new Set([...pendingCancellations, id])
-    try {
-      if (await act(() => retry ? api.RetryTransfer(id) : api.CancelTransfer(id))) {
-        if (retry) refresh(true)
-      }
-    } finally {
-      if (retry) pendingTransferActions = new Set([...pendingTransferActions].filter((value) => value !== id))
-      else pendingCancellations = new Set([...pendingCancellations].filter((value) => value !== id))
-    }
+  const storageClassOptions = ['STANDARD', 'STANDARD_IA', 'ONEZONE_IA', 'INTELLIGENT_TIERING', 'GLACIER_IR', 'GLACIER', 'DEEP_ARCHIVE'].map((value) => ({ value, label: value }))
+  async function changeStorageClass(keys: string[]) {
+    const objects = keys.filter((key) => !key.endsWith('/'))
+    if (!objects.length) return notify(t('selectObjectsOnly'), true)
+    const b = bucket
+    const cls = await ask({ title: t('changeStorageClass'), ok: t('apply'), text: t('storageClassText', { n: objects.length }), options: storageClassOptions, value: 'STANDARD' })
+    if (cls === null) return
+    const n = await guard(() => api.SetStorageClass(b, objects, cls))
+    if (n !== undefined && n !== null) { notify(t('storageClassChanged', { n })); selected = new Set(); refresh(true) }
   }
 
-  async function clearTransfers() {
-    if (await act(api.ClearTransfers)) transfers = transfers.filter((transfer) => transfer.state === 'running')
+  async function loadMounts() {
+    try { mounts = (await api.ListMounts()) ?? [] } catch { mounts = [] }
+  }
+  async function mountCurrent() {
+    const b = bucket, p = prefix
+    const mode = await ask({
+      title: t('mountBucket'), text: t('mountText'), optionsLabel: t('mountMode'), value: 'rw', ok: t('mount'),
+      options: [{ value: 'rw', label: t('mountReadWrite') }, { value: 'ro', label: t('mountReadOnly') }],
+      notes: { rw: t('mountReadWriteHint'), ro: t('mountReadOnlyHint') },
+    })
+    if (mode === null) return
+    const m = await guard(() => api.MountBucket(b, p, mode === 'ro'))
+    if (m) { notify(t('mounted', { path: m.path })); await loadMounts() }
+  }
+  async function unmount(id: string) {
+    if (await act(() => api.UnmountBucket(id))) await loadMounts()
+  }
+
+  async function openExternally(key: string) {
+    const b = bucket
+    if (await act(() => api.EditExternally(b, key))) notify(t('openedExternally'))
+  }
+
+  // Transfer events arrive many times per second for thousands of files; they
+  // are applied in batches so the list is rendered a few times a second at most.
+  const transferIndex = new Map<number, number>()
+  let transferBuffer: Transfer[] = []
+  let transferFlush: ReturnType<typeof setTimeout> | undefined
+  function applyTransferEvents() {
+    transferFlush = undefined
+    const events = transferBuffer
+    transferBuffer = []
+    let added = false
+    for (const ev of events) {
+      const i = transferIndex.get(ev.id)
+      if (i !== undefined && transfers[i]?.id === ev.id) transfers[i] = ev
+      else { transferIndex.set(ev.id, transfers.length); transfers.push(ev); added = true }
+    }
+    if (added) showTransfers = true
+  }
+  function queueTransferEvent(ev: Transfer) {
+    transferBuffer.push(ev)
+    transferFlush ??= setTimeout(applyTransferEvents, 250)
+  }
+  async function loadTransfers() {
+    try {
+      const [list, state] = await Promise.all([api.GetTransfers(), api.GetTransferQueue()])
+      transferBuffer = []
+      transfers = list ?? []
+      transferIndex.clear()
+      transfers.forEach((tr, i) => transferIndex.set(tr.id, i))
+      queue = state
+    } catch (e) { notify(errorText(e), true) }
   }
 
   function keyboardShortcut(event: KeyboardEvent) {
-    if (dialog || editing !== undefined || showAbout || editingHeaders || copying || palette) return
+    if (dialog || editing !== undefined || showAbout || editingHeaders || bucketSettings || objectSettings || copying || palette) return
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); openPalette(); return }
     const target = event.target as HTMLElement | null
     if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
-    if (event.key === 'Escape') { langOpen = false; selected = new Set(); return }
+    if (event.key === 'Escape') { langOpen = false; uploadOpen = false; selected = new Set(); return }
     if (!bucket || tab !== 'browser') return
     if (event.key === 'F5' || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'r')) {
       event.preventDefault(); refresh(); return
@@ -568,7 +659,7 @@
     syncBackend()
     loadProfiles()
     const offAbout = EventsOn('show-about', () => (showAbout = true))
-    const closeMenus = () => (langOpen = false)
+    const closeMenus = () => { langOpen = false; uploadOpen = false; mountOpen = false }
     const onKey = keyboardShortcut
     window.addEventListener('click', closeMenus)
     window.addEventListener('keydown', onKey)
@@ -582,16 +673,23 @@
     window.addEventListener('dragenter', onDragEnter)
     window.addEventListener('dragleave', onDragLeave)
     window.addEventListener('drop', onDragEnd)
-    const offT = EventsOn('transfer', (ev: Transfer) => {
-      const i = transfers.findIndex((t) => t.id === ev.id)
-      if (i >= 0) transfers[i] = ev
-      else {
-        const history = [ev, ...transfers]
-        const completed = history.filter((transfer) => transfer.state !== 'running').slice(0, 200)
-        transfers = history.filter((transfer) => transfer.state === 'running' || completed.includes(transfer))
-        showTransfers = true
-      }
+    const offT = EventsOn('transfer', queueTransferEvent)
+    const offE = EventsOn('edit', (ev: api.EditEvent) => {
+      if (ev.state === 'uploaded') { notify(t('editUploaded', { name: ev.key.split('/').pop() ?? ev.key })); refresh(true) }
+      else notify(t('editFailed', { name: ev.key.split('/').pop() ?? ev.key, error: ev.error }), true)
     })
+    const offM = EventsOn('mount', (ev: api.MountEvent) => {
+      loadMounts()
+      if (ev.state === 'unmounted') notify(t('unmounted'))
+    })
+    loadMounts()
+    const offQ = EventsOn('queue', (ev: api.TransferQueue) => {
+      queue = ev
+      // Finished transfers removed on the backend disappear from the list too.
+      const known = ev.queued + ev.running + ev.failed + ev.done
+      if (known < transfers.length) loadTransfers()
+    })
+    loadTransfers()
     OnFileDrop(async (files) => {
       if (!bucket || tab !== 'browser') return notify(t('openBucketFirst'), true)
       const n = await guard(() => api.UploadDropped(bucket, prefix, files))
@@ -604,7 +702,7 @@
     }, 15000)
     const onFocus = () => { if (tab === 'browser' && !dialog) refresh(true) }
     window.addEventListener('focus', onFocus)
-    return () => { offT(); offAbout(); OnFileDropOff(); clearInterval(timer); systemTheme.removeEventListener('change', systemThemeChanged); window.removeEventListener('dragenter', onDragEnter); window.removeEventListener('dragleave', onDragLeave); window.removeEventListener('drop', onDragEnd); window.removeEventListener('focus', onFocus); window.removeEventListener('click', closeMenus); window.removeEventListener('keydown', onKey) }
+    return () => { offT(); offQ(); offE(); offM(); offAbout(); OnFileDropOff(); clearInterval(timer); systemTheme.removeEventListener('change', systemThemeChanged); window.removeEventListener('dragenter', onDragEnter); window.removeEventListener('dragleave', onDragLeave); window.removeEventListener('drop', onDragEnd); window.removeEventListener('focus', onFocus); window.removeEventListener('click', closeMenus); window.removeEventListener('keydown', onKey) }
   })
 </script>
 
@@ -765,8 +863,37 @@
           <button class="ghost" onclick={newFolder} title={t('newFolder')}><i class="ri-folder-add-line"></i></button>
           <button class="ghost" onclick={() => upload(true)} title={t('uploadFolder')}><i class="ri-folder-upload-line"></i></button>
           <button class="ghost" onclick={sync} title={t('syncFolder')}><i class="ri-loop-right-line"></i></button>
+          <button class="ghost" onclick={() => (bucketSettings = true)} title={t('bucketSettings')}><i class="ri-settings-3-line"></i></button>
         </div>
-        <button class="primary" onclick={() => upload(false)} title={t('uploadFile')}><i class="ri-upload-2-line"></i><span class="lbl">{t('upload')}</span></button>
+        <div class="mountmenu">
+            <button class:on={!!currentMount} aria-pressed={!!currentMount} title={currentMount ? t('mountedTitle', { path: currentMount.path }) : t('mountBucket')} aria-haspopup="menu" aria-expanded={mountOpen}
+              onclick={(e) => { e.stopPropagation(); if (mounts.length) mountOpen = !mountOpen; else mountCurrent() }}><i class="ri-hard-drive-2-line"></i><span class="lbl">{currentMount ? t('mountedLabel') : t('mount')}</span></button>
+            {#if mountOpen}
+              <div class="menu" role="menu">
+                {#each mounts as m (m.id)}
+                  <div class="mrow">
+                    <span class="mono" title={m.path}>{m.profile} / {m.bucket}{m.prefix ? '/' + m.prefix : ''}{m.readOnly ? ' · RO' : ''}</span>
+                    <button class="ghost sm" title={t('openFolder')} onclick={() => act(() => api.OpenMountFolder(m.id))}><i class="ri-folder-open-line"></i></button>
+                    <button class="ghost sm" title={t('unmount')} onclick={() => unmount(m.id)}><i class="ri-eject-line"></i></button>
+                  </div>
+                {/each}
+                {#if !currentMount}
+                  <button class="ghost" role="menuitem" onclick={() => { mountOpen = false; mountCurrent() }}><i class="ri-hard-drive-2-line"></i> {t('mountThis')}</button>
+                {/if}
+              </div>
+            {/if}
+        </div>
+        <div class="upmenu">
+          <button class="primary" onclick={() => upload(false)} title={t('uploadFile')}><i class="ri-upload-2-line"></i><span class="lbl">{t('upload')}</span></button>
+          <button class="primary caret" title={t('uploadOptions')} aria-haspopup="menu" aria-expanded={uploadOpen} onclick={(e) => { e.stopPropagation(); uploadOpen = !uploadOpen }}><i class="ri-arrow-down-s-line"></i></button>
+          {#if uploadOpen}
+            <div class="menu" role="menu">
+              <button class="ghost" role="menuitem" onclick={() => { uploadOpen = false; upload(false) }}><i class="ri-file-upload-line"></i> {t('uploadFiles')}</button>
+              <button class="ghost" role="menuitem" onclick={() => { uploadOpen = false; upload(true) }}><i class="ri-folder-upload-line"></i> {t('uploadFolder')}</button>
+              <p class="muted">{t('dropHint')}</p>
+            </div>
+          {/if}
+        </div>
       </div>
 
       {#if search}
@@ -846,7 +973,9 @@
               <button onclick={() => download([info!.key])}><i class="ri-download-2-line"></i> {t('download')}</button>
               <button onclick={() => copyLink(info!.key)}><i class="ri-link"></i> {t('link')}</button>
               <button onclick={() => act(() => api.CopyToClipboard(info!.key))}><i class="ri-file-copy-line"></i> {t('copyKey')}</button>
+              <button onclick={() => openExternally(info!.key)}><i class="ri-external-link-line"></i> {t('openWith')}</button>
               <button onclick={() => (editingHeaders = true)}><i class="ri-equalizer-line"></i> {t('headers')}</button>
+              <button onclick={() => (objectSettings = true)}><i class="ri-settings-3-line"></i> {t('settings')}</button>
               <button onclick={loadVersions}><i class="ri-history-line"></i> {t('versions')}</button>
             </div>
             {#if versions}
@@ -897,6 +1026,7 @@
           <span class="count">{t('nSelected', { n: selected.size })}</span>
           <button class="ghost" onclick={() => download([...selected])}><i class="ri-download-2-line"></i> {t('download')}</button>
           <button class="ghost" onclick={() => (copying = [...selected])}><i class="ri-file-transfer-line"></i> {t('copyTo')}</button>
+          <button class="ghost" onclick={() => changeStorageClass([...selected])}><i class="ri-stack-line"></i> {t('storageClass')}</button>
           <button class="ghost del" onclick={() => remove([...selected])}><i class="ri-delete-bin-line"></i> {t('delete')}</button>
           <button class="ghost" title={t('clearSelection')} onclick={() => (selected = new Set())}><i class="ri-close-line"></i></button>
         </div>
@@ -930,31 +1060,7 @@
     {/if}
 
     {#if showTransfers}
-      <div class="transfers" transition:slide={{ duration: prefersReducedMotion.current ? 0 : 180 }}>
-        <div class="thead">
-          <b>{t('transfers')}</b>
-          <span style="flex:1"></span>
-          <button class="ghost sm" onclick={clearTransfers}>{t('clear')}</button>
-          <button class="ghost sm" title={t('close')} onclick={() => (showTransfers = false)}><i class="ri-close-line"></i></button>
-        </div>
-        <div class="tlist">
-          {#each transfers as tr (tr.id)}
-            <div class="trow" animate:flip={{ duration: prefersReducedMotion.current ? 0 : 180 }} in:fade={{ duration: prefersReducedMotion.current ? 0 : 140 }}>
-              <i class="tk {tr.kind} {transferIcons[tr.kind] ?? 'ri-download-2-line'}"></i>
-              <span class="tname mono" title={tr.name}>{tr.name}</span>
-              <div class="bar"><div class="fill {tr.state}" style="width:{tr.total ? Math.min(100, (tr.done / tr.total) * 100) : tr.state === 'done' ? 100 : 0}%"></div></div>
-              <span class="tstate muted" title={tr.error}>{tr.state === 'error' ? t('errorPrefix') + tr.error : tr.state === 'cancelled' ? t('transferCancelled') : tr.state === 'done' ? fmtSize(tr.total) : `${fmtSize(tr.done)} / ${fmtSize(tr.total)}`}</span>
-              {#if tr.state === 'running'}
-                <button class="ghost sm" title={t('cancelTransfer')} disabled={pendingCancellations.has(tr.id)} onclick={() => transferAction(tr.id)}><i class="ri-stop-circle-line"></i></button>
-              {:else if tr.state === 'error' || tr.state === 'cancelled'}
-                <button class="ghost sm" title={t('retryTransfer')} disabled={pendingTransferActions.has(tr.id)} onclick={() => transferAction(tr.id, true)}><i class="ri-restart-line"></i></button>
-              {:else}<span></span>{/if}
-            </div>
-          {:else}
-            <div class="muted pad">{t('noTransfers')}</div>
-          {/each}
-        </div>
-      </div>
+      <Transfers {transfers} {queue} {fmtSize} onclose={() => (showTransfers = false)} onerror={(message) => notify(message, true)} onchanged={() => refresh(true)} />
     {/if}
   </main>
 </div>
@@ -964,6 +1070,13 @@
     onsaved={async (p) => { editing = undefined; await loadProfiles(); connect(p) }} />
 {/if}
 
+{#if bucketSettings && bucket}
+  <BucketSettings {bucket} provider={active?.provider} onclose={() => (bucketSettings = false)} onnotify={(message, error) => notify(message, error)} />
+{/if}
+{#if objectSettings && info}
+  <ObjectSettings {bucket} key={info.key} onclose={() => (objectSettings = false)} onnotify={(message, error) => notify(message, error)}
+    onchanged={() => { const key = info!.key; refresh(true); showInfo(key) }} />
+{/if}
 {#if editingHeaders && info}
   <HeadersModal {bucket} {info} onclose={() => (editingHeaders = false)}
     onsaved={() => { const key = info!.key; editingHeaders = false; notify(t('headersSaved')); refresh(true); showInfo(key) }} />
@@ -997,7 +1110,7 @@
             {#each dialog.options as option}<option value={option.value}>{option.label}</option>{/each}
           </select>
         </label>
-        {#if dialog.notes?.[dialog.value ?? '']}<p class:warn={dialog.value === dialog.dangerValue}>{dialog.notes[dialog.value ?? '']}</p>{/if}
+        {#if dialog.notes?.[dialog.value ?? '']}<p class:warn={dialog.dangerValue?.split(',').includes(dialog.value ?? '')}>{dialog.notes[dialog.value ?? '']}</p>{/if}
       {/if}
       <div class="dacts">
         {#if dialog.cancel !== false}<button type="button" onclick={() => closeDialog(null)}>{t('cancel')}</button>{/if}
@@ -1020,7 +1133,8 @@
 {#if toast}<div class="toast selectable" role="status" aria-live="polite" in:fade={{ duration: prefersReducedMotion.current ? 0 : 140 }} class:err={toast.err}>{toast.text}</div>{/if}
 
 <style>
-  .app { display: grid; grid-template-columns: 248px 1fr; height: 100vh; background: var(--bg); }
+  /* A single row of exactly the viewport height: tall content scrolls inside its panel instead of pushing the sidebar footer off screen. */
+  .app { display: grid; grid-template-columns: 248px 1fr; grid-template-rows: minmax(0, 1fr); height: 100vh; overflow: hidden; background: var(--bg); }
   .nav { display: flex; flex-direction: column; gap: 1px; padding: 2px 8px 6px; }
   .navbtn { justify-content: flex-start; gap: 10px; padding: 6px 10px; color: var(--sidebar-label); }
   .navbtn:hover:not(:disabled) { background: var(--sidebar-hover); }
@@ -1028,12 +1142,12 @@
   .navbtn.on i { color: var(--accent); }
   .avatar { display: grid; place-items: center; width: 20px; height: 20px; flex: none; border-radius: 6px; font-size: 11px; font-weight: 700; --c: #71717a; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
   .avatar.supabase { --c: #10b981; } .avatar.aws { --c: #f59e0b; } .avatar.minio { --c: #e11d48; } .avatar.r2 { --c: #f97316; } /* provider brand hues */
-  aside { display: flex; flex-direction: column; min-height: 0; }
+  aside { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   .brand { padding: 16px 16px 8px; font-weight: 650; font-size: 14px; letter-spacing: -.01em; color: var(--text-strong); display: flex; align-items: center; gap: 9px; }
   .brand img { border-radius: 6px; }
   .section-title { display: flex; justify-content: space-between; align-items: center; padding: 14px 8px 4px 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-  .profiles { max-height: 35%; overflow: auto; }
-  .buckets { flex: 1; overflow: auto; padding-bottom: 10px; }
+  .profiles { max-height: 35%; overflow: auto; flex: none; }
+  .buckets { flex: 1; min-height: 0; overflow: auto; padding-bottom: 10px; }
   .favorites { max-height: 22%; overflow: auto; flex: none; }
   .star { padding: 3px 6px; color: var(--muted) !important; }
   .star.on { color: var(--accent) !important; }
@@ -1050,7 +1164,7 @@
   .prow:hover .sm, .prow:focus-within .sm, .prow.active .sm, .brow:hover .del, .brow:focus-within .del { opacity: .75; }
   .sm { padding: 2px 6px; min-height: 24px; font-size: 12px; }
   .pad { padding: 8px 16px; }
-  .aside-foot { margin-top: auto; padding: 8px; display: flex; align-items: center; gap: 2px; }
+  .aside-foot { margin-top: auto; flex: none; padding: 8px; display: flex; align-items: center; gap: 2px; }
   .aside-foot button { color: var(--sidebar-label); }
   .aside-foot .grow { flex: 1; justify-content: flex-start; }
   .aside-foot button:hover:not(:disabled) { background: var(--sidebar-hover); }
@@ -1074,6 +1188,18 @@
   .group button:hover:not(:disabled) { background: var(--raised); box-shadow: var(--shadow-xs); }
   .conn { margin-right: 6px; max-width: 30%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
   .lang { position: relative; }
+  .upmenu { position: relative; display: flex; }
+  .mountmenu { position: relative; display: flex; margin-left: 6px; }
+  .mountmenu > button { gap: 6px; }
+  .mountmenu .on { color: var(--accent); border-color: var(--accent); }
+  .mountmenu .menu { position: absolute; right: 0; top: calc(100% + 6px); min-width: 300px; padding: 4px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); z-index: 40; display: flex; flex-direction: column; gap: 2px; }
+  .mountmenu .mrow { display: flex; align-items: center; gap: 4px; padding: 4px 6px; font-size: 12px; } .mountmenu .mrow span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mountmenu .menu > button { justify-content: flex-start; gap: 10px; padding: 6px 10px; font-weight: 500; border-radius: 7px; }
+  .upmenu > .primary:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+  .upmenu .caret { padding: 0 6px; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: 1px solid color-mix(in srgb, #000 20%, transparent); }
+  .upmenu .menu { position: absolute; right: 0; top: calc(100% + 6px); min-width: 220px; padding: 4px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); z-index: 40; display: flex; flex-direction: column; }
+  .upmenu .menu button { justify-content: flex-start; gap: 10px; padding: 6px 10px; font-weight: 500; border-radius: 7px; }
+  .upmenu .menu p { margin: 4px 10px 6px; font-size: 11px; line-height: 1.4; }
   .lang .code { font-size: 11px; font-weight: 600; letter-spacing: .04em; }
   .lang .menu { position: absolute; left: 0; bottom: calc(100% + 6px); min-width: 170px; padding: 4px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); z-index: 40; display: flex; flex-direction: column; }
   .lang .menu button { justify-content: flex-start; gap: 10px; padding: 6px 10px; font-weight: 500; border-radius: 7px; }
@@ -1159,16 +1285,6 @@
   .dropcard { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 32px 48px; background: var(--panel); border: 2px dashed var(--accent); border-radius: 20px; box-shadow: var(--shadow); color: var(--text-strong); font-size: 15px; }
   .dropcard .muted { font-size: 12px; font-weight: 400; }
 
-  .transfers { position: absolute; right: 12px; bottom: 40px; width: 520px; max-width: calc(100% - 24px); max-height: 45%; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); z-index: 20; overflow: hidden; }
-  .thead { display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--border); }
-  .tlist { overflow: auto; padding: 4px 0; }
-  .trow { display: grid; grid-template-columns: 18px minmax(0, 1fr) 110px 130px 28px; gap: 8px; align-items: center; padding: 5px 12px; font-size: 12px; }
-  .tk.upload { color: var(--accent); } .tk.download { color: var(--info); } .tk.copy, .tk.move { color: var(--success); } .tk.sync { color: var(--accent); }
-  .tname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tstate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
-  .bar { height: 4px; background: var(--panel2); border-radius: 99px; overflow: hidden; }
-  .fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width .15s; }
-  .fill.done { background: var(--success); } .fill.error { background: var(--danger); width: 100% !important; }
 
   .dlg { width: min(420px, 92vw); background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow); }
   .dlg h3 { margin: 0; font-size: 15px; font-weight: 650; color: var(--text-strong); }

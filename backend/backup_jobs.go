@@ -228,7 +228,7 @@ func (a *App) runBackup(job BackupJob) (SyncResult, error) {
 	if err != nil {
 		return SyncResult{}, err
 	}
-	return a.syncDirectory(c, job.Bucket, job.Prefix, job.Dir, job.Mirror)
+	return a.syncDirectory(c, job.Bucket, job.Prefix, job.Dir, job.Mirror, profile.uploadOptions())
 }
 
 // backupDue reports whether a scheduled job should run at the given time.

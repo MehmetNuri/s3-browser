@@ -40,3 +40,9 @@ func SaveFileDialog(ctx context.Context, opts SaveDialogOptions) (string, error)
 func ClipboardSetText(ctx context.Context, text string) error {
 	return Call(ctx, "clipboard", text, nil)
 }
+
+// OpenEditFile opens a temporary copy of an object with the desktop's default
+// application; the host only accepts paths inside its edit folders.
+func OpenEditFile(ctx context.Context, path string) error {
+	return Call(ctx, "openEditFile", path, nil)
+}

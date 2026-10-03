@@ -10,16 +10,21 @@ import (
 )
 
 type Settings struct {
-	CloseToTray bool `json:"closeToTray"`
+	CloseToTray   bool  `json:"closeToTray"`
+	TransferLimit int   `json:"transferLimit"` // concurrent transfers, 1..maxTransferLimit
+	BandwidthKBps int64 `json:"bandwidthKBps"` // total transfer rate cap, 0 = unlimited
 }
 
 func settingsPath(store *profileStore) string {
 	return filepath.Join(filepath.Dir(store.path), "settings.json")
 }
 func loadSettings(store *profileStore) Settings {
-	s := Settings{CloseToTray: true}
+	s := Settings{CloseToTray: true, TransferLimit: defaultTransferLimit}
 	if b, err := os.ReadFile(settingsPath(store)); err == nil {
 		_ = json.Unmarshal(b, &s)
+	}
+	if s.TransferLimit < 1 || s.TransferLimit > maxTransferLimit {
+		s.TransferLimit = defaultTransferLimit
 	}
 	return s
 }
@@ -27,7 +32,13 @@ func (a *App) GetSettings() Settings { a.mu.RLock(); defer a.mu.RUnlock(); retur
 func (a *App) SetCloseToTray(enabled bool) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	settings := Settings{CloseToTray: enabled}
+	settings := a.settings
+	settings.CloseToTray = enabled
+	return a.saveSettingsLocked(settings)
+}
+
+// saveSettingsLocked writes the settings file; the caller holds a.mu.
+func (a *App) saveSettingsLocked(settings Settings) error {
 	data, err := json.MarshalIndent(settings, "", "  ")
 	if err != nil {
 		return err

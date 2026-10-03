@@ -36,18 +36,18 @@ func TestSyncUploadsOnlyNewAndChangedFiles(t *testing.T) {
 	write("index.html", "<html>", past)
 	write("css/site.css", "body{}", past)
 
-	first, err := a.syncDirectory(c, "test", "www/", dir, false)
+	first, err := a.syncDirectory(c, "test", "www/", dir, false, uploadOptions{})
 	if err != nil || first != (SyncResult{Uploaded: 2}) {
 		t.Fatalf("first sync: %+v, %v", first, err)
 	}
-	second, err := a.syncDirectory(c, "test", "www/", dir, false)
+	second, err := a.syncDirectory(c, "test", "www/", dir, false, uploadOptions{})
 	if err != nil || second != (SyncResult{Skipped: 2}) {
 		t.Fatalf("unchanged sync: %+v, %v", second, err)
 	}
 	write("index.html", "<html><body>", past)                  // size changed
 	write("css/site.css", "body{}", time.Now().Add(time.Hour)) // modified after the upload
 	write("new.txt", "new", past)
-	third, err := a.syncDirectory(c, "test", "www/", dir, false)
+	third, err := a.syncDirectory(c, "test", "www/", dir, false, uploadOptions{})
 	if err != nil || third != (SyncResult{Uploaded: 3}) {
 		t.Fatalf("changed sync: %+v, %v", third, err)
 	}

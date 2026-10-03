@@ -1,9 +1,10 @@
 const { app, BrowserWindow, ipcMain, dialog, clipboard, shell, Tray, Menu, nativeImage, nativeTheme, session, safeStorage, Notification } = require('electron')
-const { join, isAbsolute } = require('node:path')
+const { join, isAbsolute, dirname, basename } = require('node:path')
 const { pathToFileURL } = require('node:url')
 const { execFile, spawn } = require('node:child_process')
 const { createInterface } = require('node:readline')
-const { readFileSync } = require('node:fs')
+const { readFileSync, realpathSync } = require('node:fs')
+const { tmpdir, homedir } = require('node:os')
 const { Backend } = require('./backend.cjs')
 const { createTrayMenu, activityLabel } = require('./tray-menu.cjs')
 const { createTrayActivity } = require('./tray-activity.cjs')
@@ -113,7 +114,8 @@ function trackActivity(name, data) {
     if (data.active) batches.set(data.id, data)
     else if (batches.delete(data.id)) { outcome.done += data.done; outcome.failed += data.failed }
   } else if (data.state === 'running') transfers.set(data.id, data)
-  else if (transfers.delete(data.id) && !batches.size) {
+  // Quiet transfers (mounts, external editors) show activity but never a notification.
+  else if (transfers.delete(data.id) && !batches.size && !data.quiet) {
     if (data.state === 'done') outcome.done++
     else if (data.state === 'error') outcome.failed++
   }
@@ -192,6 +194,26 @@ async function hostRequest(method, options) {
       if (error) throw new Error(error)
       return null
     }
+    // Mount points live under "<home>/S3 Browser"; nothing else may be opened through this operation.
+    case 'openMountFolder': {
+      if (typeof options !== 'string' || !isAbsolute(options)) throw new Error('Invalid mount path')
+      const root = join(homedir(), 'S3 Browser')
+      if (dirname(options) !== root) throw new Error('Invalid mount path')
+      const error = await shell.openPath(options)
+      if (error) throw new Error(error)
+      return null
+    }
+    // Temporary copies of objects for editing live in folders the backend created under the system temp directory.
+    case 'openEditFile': {
+      if (typeof options !== 'string' || !isAbsolute(options)) throw new Error('Invalid edit path')
+      const folder = dirname(options)
+      let inTemp = false
+      try { inTemp = realpathSync(dirname(folder)) === realpathSync(tmpdir()) } catch { inTemp = false }
+      if (!inTemp || !basename(folder).startsWith('s3browser-edit-')) throw new Error('Invalid edit path')
+      const error = await shell.openPath(options)
+      if (error) throw new Error(error)
+      return null
+    }
     default: throw new Error('Unknown desktop operation')
   }
 }
@@ -217,7 +239,7 @@ else {
     backend = new Backend(executable, hostRequest, (name, data) => {
       if (name === 'language-changed') { language = data; refreshTray(); return }
       if (name === 'batch' || name === 'transfer') trackActivity(name, data)
-      if (['transfer', 'cap', 'show-about', 'backup'].includes(name)) sendToRenderer(name, data)
+      if (['transfer', 'queue', 'edit', 'mount', 'cap', 'show-about', 'backup'].includes(name)) sendToRenderer(name, data)
     }, (error) => {
       // Without the backend every operation would fail; do not keep a dead window open.
       if (quitting || !backendReady) return

@@ -1,5 +1,5 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron')
-const allowedEvents = new Set(['transfer', 'cap', 'show-about', 'backup'])
+const allowedEvents = new Set(['transfer', 'queue', 'edit', 'mount', 'cap', 'show-about', 'backup'])
 contextBridge.exposeInMainWorld('desktop', {
   call: (method, args = []) => ipcRenderer.invoke('backend:call', method, args),
   onEvent: (name, callback) => {

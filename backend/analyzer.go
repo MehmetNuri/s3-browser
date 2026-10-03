@@ -6,7 +6,6 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -285,27 +284,18 @@ func (a *App) CopyToProfile(bucket, basePrefix string, keys []string, profileID,
 	b := a.startBatch(kind, len(targets))
 	defer b.end()
 	up := manager.NewUploader(dst, func(u *manager.Uploader) { u.PartSize = 8 << 20 })
-	sem := make(chan struct{}, 4)
-	var wg sync.WaitGroup
-	var failed atomic.Int64
-	for _, t := range targets {
-		wg.Add(1)
-		sem <- struct{}{}
-		go func(t target) {
-			defer wg.Done()
-			defer func() { <-sem }()
-			err := a.copyOne(src, up, kind, bucket, t.from, dstBucket, t.to)
-			if err == nil && move {
-				// The source is removed only after its copy was stored.
-				_, err = src.DeleteObject(a.ctx, &s3.DeleteObjectInput{Bucket: aws.String(bucket), Key: aws.String(t.from)})
-			}
-			b.finish(err)
-			if err != nil {
-				failed.Add(1)
-			}
-		}(t)
+	tasks := make([]*transferTask, len(targets))
+	for i, t := range targets {
+		tasks[i] = a.queueCopy(src, up, kind, bucket, t.from, dstBucket, t.to, move, profile.uploadOptions())
 	}
-	wg.Wait()
+	var failed atomic.Int64
+	for _, task := range tasks {
+		err := task.wait()
+		b.finish(err)
+		if err != nil {
+			failed.Add(1)
+		}
+	}
 	if f := failed.Load(); f > 0 {
 		return len(targets) - int(f), b.failure("copyFailed")
 	}
@@ -316,8 +306,8 @@ func (a *App) CopyToProfile(bucket, basePrefix string, keys []string, profileID,
 	return len(targets), nil
 }
 
-func (a *App) copyOne(src *s3.Client, up *manager.Uploader, kind, bucket, key, dstBucket, dstKey string) error {
-	return a.startTransfer(kind, key, func(ctx context.Context, progress func(int64, int64)) error {
+func (a *App) queueCopy(src *s3.Client, up *manager.Uploader, kind, bucket, key, dstBucket, dstKey string, move bool, opts uploadOptions) *transferTask {
+	return a.enqueueTransfer(kind, key, 0, func(ctx context.Context, progress func(int64, int64)) error {
 		out, err := src.GetObject(ctx, &s3.GetObjectInput{Bucket: aws.String(bucket), Key: aws.String(key)})
 		if err != nil {
 			return err
@@ -325,13 +315,19 @@ func (a *App) copyOne(src *s3.Client, up *manager.Uploader, kind, bucket, key, d
 		defer out.Body.Close()
 		total := aws.ToInt64(out.ContentLength)
 		progress(0, total)
-		_, err = up.Upload(ctx, &s3.PutObjectInput{
+		in := &s3.PutObjectInput{
 			Bucket: aws.String(dstBucket), Key: aws.String(dstKey),
-			Body:        &progressReader{r: out.Body, emit: func(n int64) { progress(n, total) }},
+			Body:        &progressReader{r: out.Body, emit: func(n int64) { progress(n, total) }, limiter: &a.bandwidth, ctx: ctx},
 			ContentType: out.ContentType, CacheControl: out.CacheControl,
 			ContentDisposition: out.ContentDisposition, ContentEncoding: out.ContentEncoding,
 			Metadata: out.Metadata,
-		})
+		}
+		opts.apply(in)
+		_, err = up.Upload(ctx, in)
+		if err == nil && move {
+			// The source is removed only after its copy was stored.
+			_, err = src.DeleteObject(ctx, &s3.DeleteObjectInput{Bucket: aws.String(bucket), Key: aws.String(key)})
+		}
 		return err
 	})
 }

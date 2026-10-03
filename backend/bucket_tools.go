@@ -143,5 +143,5 @@ func (a *App) SetBucketVersioning(bucket string, enabled bool) error {
 	_, err = c.PutBucketVersioning(a.ctx, &s3.PutBucketVersioningInput{
 		Bucket: aws.String(bucket), VersioningConfiguration: &types.VersioningConfiguration{Status: status},
 	})
-	return describeErr(err)
+	return settingErr(err)
 }

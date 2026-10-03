@@ -12,15 +12,21 @@ A desktop client for Amazon S3, Supabase Storage, MinIO, Cloudflare R2 and other
 
 - Connection profiles and credential-free JSON profile import/export. Secret keys are encrypted with the operating system's credential store when one is available.
 - Browse buckets and objects, create folders, upload (including drag and drop), download, rename and delete objects.
-- Transfer progress, cancellation and retry.
+- Transfer queue: every transfer is listed as queued, running, done or failed; set how many run at once, cap the total transfer rate, pause and resume the queue, reorder waiting items by dragging, cancel what is waiting and retry what failed. Objects of 32 MB and more are downloaded as parallel byte ranges, and downloads are verified against the object's MD5 ETag when the object was stored in one part.
 - Text and image previews, metadata, folder sizes and presigned links with a selectable lifetime.
 - Search a bucket or folder including all subfolders.
-- Folder sync: upload only the new and changed files of a local folder, optionally mirroring deletions to the bucket.
+- Folder sync in both directions: upload only the new and changed files of a local folder, or download the new and changed objects of a prefix, each optionally mirroring deletions to the other side.
 - Backup jobs: saved folder-to-bucket syncs that run on request or on a schedule while the application is open; each job is add-only or mirror, as chosen by the user.
 - Object versions: list, download, restore and delete versions, and enable or suspend bucket versioning.
 - Find and remove incomplete multipart uploads that silently take up storage.
 - Desktop notification when transfers finish while the window is in the background.
 - Edit HTTP headers (Content-Type, Cache-Control, Content-Disposition, Content-Encoding) of existing objects.
+- Object settings: storage class (also for a selection), tags, user metadata, full ACL grants, Object Lock retention and legal hold, and Glacier restore requests.
+- Bucket settings: policy, ACL grants, CORS rules, lifecycle rules, tags, default encryption, public access block, Object Lock, versioning, static website hosting, access logging and requester pays; CloudFront distributions of the bucket with cache invalidation on Amazon S3.
+- Open an object with the desktop's default application; the copy is uploaded again whenever it is saved.
+- Mount a bucket or folder as a local folder (Linux through FUSE, macOS with macFUSE): browse and read in the file manager, and with read-write access saved files are uploaded when closed. Not available on Windows.
+- Per-connection defaults for the storage class and server-side encryption of new objects.
+- Connection presets for Amazon S3, Supabase Storage, MinIO, Cloudflare R2, Backblaze B2, Wasabi, DigitalOcean Spaces, Hetzner, Scaleway, OVHcloud, Akamai/Linode, Exoscale, Storj, Google Cloud Storage (HMAC) and any other S3-compatible endpoint.
 - Storage analyzer: space by folder, file type, age and storage class, the largest objects, and duplicate objects with the space they waste.
 - Copy or move objects and folders to a bucket of another connection, including other providers and accounts.
 - Edit small text objects in place, with a check that the object did not change meanwhile.

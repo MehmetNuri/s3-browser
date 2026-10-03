@@ -19,13 +19,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 // Profile is a saved S3 connection.
 type Profile struct {
 	ID           string `json:"id"`
 	Name         string `json:"name"`
-	Provider     string `json:"provider"` // aws | supabase | minio | r2 | custom
+	Provider     string `json:"provider"` // aws | supabase | minio | r2 | a preset name | custom
 	Endpoint     string `json:"endpoint"`
 	Region       string `json:"region"`
 	AccessKey    string `json:"accessKey"`
@@ -37,6 +38,10 @@ type Profile struct {
 	ProjectRef string `json:"projectRef"`
 	// Buckets added by hand, for credentials without s3:ListAllMyBuckets.
 	Buckets []string `json:"buckets"`
+	// Defaults for new uploads and copies into this profile; empty keeps the provider's default.
+	StorageClass string `json:"storageClass"`
+	Encryption   string `json:"encryption"` // "" | AES256 | aws:kms
+	KMSKey       string `json:"kmsKey"`
 }
 
 type profileStore struct {
@@ -168,13 +173,23 @@ func normalize(p Profile) Profile {
 		*field = strings.TrimSpace(*field)
 	}
 	p.Endpoint = strings.TrimRight(strings.TrimSpace(p.Endpoint), "/")
+	p.StorageClass, p.Encryption, p.KMSKey = strings.TrimSpace(p.StorageClass), strings.TrimSpace(p.Encryption), strings.TrimSpace(p.KMSKey)
+	if !storageClasses[p.StorageClass] {
+		p.StorageClass = ""
+	}
+	if p.Encryption != string(types.ServerSideEncryptionAes256) && p.Encryption != string(types.ServerSideEncryptionAwsKms) {
+		p.Encryption, p.KMSKey = "", ""
+	}
+	if !validHeaderValue(p.KMSKey) {
+		p.KMSKey = ""
+	}
 	switch p.Provider {
 	case "supabase":
 		if p.Endpoint == "" && p.ProjectRef != "" {
 			p.Endpoint = "https://" + p.ProjectRef + ".storage.supabase.co/storage/v1/s3"
 		}
 		p.PathStyle = true
-	case "minio":
+	case "minio", "storj", "gcs", "backblaze":
 		p.PathStyle = true
 	case "r2":
 		if p.Region == "" {
@@ -218,4 +233,36 @@ func newClient(ctx context.Context, p Profile) (*s3.Client, error) {
 		}
 		o.UsePathStyle = p.PathStyle
 	}), nil
+}
+
+// uploadOptions are the per-profile defaults applied to objects this
+// application writes.
+type uploadOptions struct {
+	storageClass types.StorageClass
+	encryption   types.ServerSideEncryption
+	kmsKey       string
+}
+
+func (p Profile) uploadOptions() uploadOptions {
+	return uploadOptions{storageClass: types.StorageClass(p.StorageClass), encryption: types.ServerSideEncryption(p.Encryption), kmsKey: p.KMSKey}
+}
+
+// apply sets the defaults on a put request; empty values leave the request alone.
+func (o uploadOptions) apply(in *s3.PutObjectInput) {
+	if o.storageClass != "" {
+		in.StorageClass = o.storageClass
+	}
+	if o.encryption != "" {
+		in.ServerSideEncryption = o.encryption
+		if o.encryption == types.ServerSideEncryptionAwsKms && o.kmsKey != "" {
+			in.SSEKMSKeyId = aws.String(o.kmsKey)
+		}
+	}
+}
+
+// activeUploadOptions are the defaults of the connected profile.
+func (a *App) activeUploadOptions() uploadOptions {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.profile.uploadOptions()
 }

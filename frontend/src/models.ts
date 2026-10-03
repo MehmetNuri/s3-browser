@@ -211,6 +211,9 @@ export namespace main {
 	    skipTLS: boolean;
 	    projectRef: string;
 	    buckets: string[];
+	    storageClass: string;
+	    encryption: string;
+	    kmsKey: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Profile(source);
@@ -230,6 +233,9 @@ export namespace main {
 	        this.skipTLS = source["skipTLS"];
 	        this.projectRef = source["projectRef"];
 	        this.buckets = source["buckets"];
+	        this.storageClass = source["storageClass"] ?? '';
+	        this.encryption = source["encryption"] ?? '';
+	        this.kmsKey = source["kmsKey"] ?? '';
 	    }
 	}
 

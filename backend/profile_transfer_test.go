@@ -2,8 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"net/http"
+	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
+
+	"github.com/johannesboyne/gofakes3"
+	"github.com/johannesboyne/gofakes3/backend/s3mem"
 )
 
 func TestProfileBackupRoundTrip(t *testing.T) {
@@ -58,5 +65,39 @@ func TestInvalidProfileImportLeavesStoreUntouched(t *testing.T) {
 		if err != nil || len(profiles) != 1 || profiles[0].Name != "Existing" {
 			t.Fatalf("store changed: %v, %v", profiles, err)
 		}
+	}
+}
+
+func TestUploadDefaultsFromProfile(t *testing.T) {
+	var mu sync.Mutex
+	var seen []string
+	fake := gofakes3.New(s3mem.New()).Server()
+	a := connectedApp(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut && strings.Contains(r.URL.Path, "/docs/") {
+			mu.Lock()
+			seen = append(seen, r.Header.Get("x-amz-storage-class")+"|"+r.Header.Get("x-amz-server-side-encryption")+"|"+r.Header.Get("x-amz-server-side-encryption-aws-kms-key-id"))
+			mu.Unlock()
+		}
+		fake.ServeHTTP(w, r)
+	}))
+	a.mu.Lock()
+	a.profile.StorageClass, a.profile.Encryption, a.profile.KMSKey = "STANDARD_IA", "aws:kms", "alias/docs"
+	a.mu.Unlock()
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("a"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.UploadPaths("test", "docs/", []string{filepath.Join(dir, "a.txt")}); err != nil {
+		t.Fatal(err)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if len(seen) != 1 || seen[0] != "STANDARD_IA|aws:kms|alias/docs" {
+		t.Fatalf("upload headers: %v", seen)
+	}
+	// Unknown values are dropped when a profile is saved.
+	p := normalize(Profile{StorageClass: "WEIRD", Encryption: "ROT13", KMSKey: "k"})
+	if p.StorageClass != "" || p.Encryption != "" || p.KMSKey != "" {
+		t.Fatalf("normalize kept invalid defaults: %+v", p)
 	}
 }

@@ -49,7 +49,7 @@ func TestBatchEventsDescribeTheWholeOperation(t *testing.T) {
 
 	batches = nil
 	c, _ := a.cli()
-	if _, err := a.syncDirectory(c, "test", "", dir, false); err != nil {
+	if _, err := a.syncDirectory(c, "test", "", dir, false, uploadOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	// Nothing changed: the sync announces its comparison and ends without transfers.
@@ -59,7 +59,7 @@ func TestBatchEventsDescribeTheWholeOperation(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "d.txt"), []byte("new"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := a.syncDirectory(c, "test", "", dir, false); err != nil {
+	if _, err := a.syncDirectory(c, "test", "", dir, false, uploadOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	if !kinds["sync"] || !kinds["upload"] {

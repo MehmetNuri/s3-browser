@@ -56,22 +56,27 @@
   <screenshots>
     <screenshot type="default">
       <caption>Browsing a bucket with an image preview</caption>
-      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.0.0/docs/screenshots/browser.png</image>
+      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.1.0/docs/screenshots/browser.png</image>
     </screenshot>
     <screenshot>
       <caption>Storage analyzer</caption>
-      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.0.0/docs/screenshots/analyzer.png</image>
+      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.1.0/docs/screenshots/analyzer.png</image>
     </screenshot>
     <screenshot>
       <caption>Backup jobs</caption>
-      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.0.0/docs/screenshots/backups.png</image>
+      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.1.0/docs/screenshots/backups.png</image>
     </screenshot>
     <screenshot>
       <caption>Command palette</caption>
-      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.0.0/docs/screenshots/command-palette.png</image>
+      <image>https://raw.githubusercontent.com/MehmetNuri/s3-browser/v1.1.0/docs/screenshots/command-palette.png</image>
     </screenshot>
   </screenshots>
   <releases>
+    <release version="1.1.0" date="2026-10-03">
+      <description>
+        <p>Transfer queue with concurrency and bandwidth limits, bucket and object settings, Object Lock, ACL editing, parallel downloads, two-way folder sync, external editing, provider presets and mounting a bucket as a folder.</p>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-10-02">
       <description>
         <p>First release.</p>

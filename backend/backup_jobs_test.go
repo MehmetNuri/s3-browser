@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -35,14 +36,14 @@ func TestMirrorDeletesOnlyWhatLeftTheFolder(t *testing.T) {
 	putObject(t, a, "backup/other/keep.txt", "outside the synced folder")
 	putObject(t, a, "backup/docs-archive/keep.txt", "sibling with a similar name")
 
-	added, err := a.syncDirectory(c, "test", "backup/", dir, false)
+	added, err := a.syncDirectory(c, "test", "backup/", dir, false, uploadOptions{})
 	if err != nil || added != (SyncResult{Uploaded: 2}) {
 		t.Fatalf("add-only sync: %+v, %v", added, err)
 	}
 	if _, err := a.HeadObject("test", "backup/docs/old.txt"); err != nil {
 		t.Fatalf("add-only sync deleted an object: %v", err)
 	}
-	mirrored, err := a.syncDirectory(c, "test", "backup/", dir, true)
+	mirrored, err := a.syncDirectory(c, "test", "backup/", dir, true, uploadOptions{})
 	if err != nil || mirrored != (SyncResult{Skipped: 2, Deleted: 1}) {
 		t.Fatalf("mirror sync: %+v, %v", mirrored, err)
 	}
@@ -62,7 +63,7 @@ func TestMirrorRefusesEmptyOrMissingSource(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, dir := range []string{empty, filepath.Join(t.TempDir(), "docs")} {
-		if result, err := a.syncDirectory(c, "test", "", dir, true); err == nil {
+		if result, err := a.syncDirectory(c, "test", "", dir, true, uploadOptions{}); err == nil {
 			t.Fatalf("mirrored from %s: %+v", dir, result)
 		}
 		if _, err := a.HeadObject("test", "docs/a.txt"); err != nil {
@@ -73,8 +74,9 @@ func TestMirrorRefusesEmptyOrMissingSource(t *testing.T) {
 
 func TestBackupJobs(t *testing.T) {
 	a := connectedApp(t, gofakes3.New(s3mem.New()).Server())
+	var eventsMu sync.Mutex
 	var events []string
-	a.emitEvent = func(name string, _ any) { events = append(events, name) }
+	a.emitEvent = func(name string, _ any) { eventsMu.Lock(); events = append(events, name); eventsMu.Unlock() }
 	dir := backupFolder(t, map[string]string{"a.txt": "a"})
 	job, err := a.addBackupJob(BackupJob{Name: "Docs", ProfileID: a.profile.ID, Bucket: "test", Prefix: "/nightly", Dir: dir, Mirror: true, IntervalMinutes: 1})
 	if err != nil || job.Prefix != "nightly/" || job.IntervalMinutes != minBackupInterval {

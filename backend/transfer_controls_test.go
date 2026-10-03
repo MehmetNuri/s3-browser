@@ -13,8 +13,11 @@ func TestTransferCancellation(t *testing.T) {
 	started := make(chan int64, 1)
 	var mu sync.Mutex
 	var last TransferEvent
-	a.emitEvent = func(_ string, data any) {
-		ev := data.(TransferEvent)
+	a.emitEvent = func(name string, data any) {
+		ev, ok := data.(TransferEvent)
+		if !ok {
+			return
+		}
 		mu.Lock()
 		last = ev
 		mu.Unlock()
@@ -53,8 +56,15 @@ func TestTransferCancellation(t *testing.T) {
 
 func TestTransferRetryAndClear(t *testing.T) {
 	a := &App{ctx: context.Background()}
+	var mu sync.Mutex
 	var events []TransferEvent
-	a.emitEvent = func(_ string, data any) { events = append(events, data.(TransferEvent)) }
+	a.emitEvent = func(_ string, data any) {
+		if ev, ok := data.(TransferEvent); ok {
+			mu.Lock()
+			events = append(events, ev)
+			mu.Unlock()
+		}
+	}
 	attempts := 0
 	err := a.startTransfer("download", "file", func(_ context.Context, progress func(int64, int64)) error {
 		attempts++
@@ -67,11 +77,15 @@ func TestTransferRetryAndClear(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected the first attempt to fail")
 	}
+	mu.Lock()
 	id := events[0].ID
+	mu.Unlock()
 	if err := a.RetryTransfer(id); err != nil {
 		t.Fatal(err)
 	}
+	mu.Lock()
 	last := events[len(events)-1]
+	mu.Unlock()
 	if attempts != 2 || last.ID != id || last.State != "done" || last.Done != 4 || last.Error != "" {
 		t.Fatalf("retry: %+v, attempts=%d", last, attempts)
 	}

@@ -141,6 +141,20 @@
   },
   {
     "type": "file",
+    "url": "https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/service/cloudfront/@v/v1.74.0.mod",
+    "sha256": "82e3e4e96b335d6e48c9c4b130bea623ddd3ed53a75bd8bbb234b6888b5da872",
+    "dest": "goproxy/github.com/aws/aws-sdk-go-v2/service/cloudfront/@v",
+    "dest-filename": "v1.74.0.mod"
+  },
+  {
+    "type": "file",
+    "url": "https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/service/cloudfront/@v/v1.74.0.zip",
+    "sha256": "eafb1098b73d8eb7cec735fd4f3939c1055856907c99832ce05c6145dabc7769",
+    "dest": "goproxy/github.com/aws/aws-sdk-go-v2/service/cloudfront/@v",
+    "dest-filename": "v1.74.0.zip"
+  },
+  {
+    "type": "file",
     "url": "https://proxy.golang.org/github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding/@v/v1.13.19.mod",
     "sha256": "104f41e3a90a5b75dfbd394fa4d8c423c25dd024d533c0a7c67663044a8be6f3",
     "dest": "goproxy/github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding/@v",
@@ -323,6 +337,20 @@
   },
   {
     "type": "file",
+    "url": "https://proxy.golang.org/github.com/hanwen/go-fuse/v2/@v/v2.11.0.mod",
+    "sha256": "53ef35ce74fe4d4ad1cadb3efb9ef55b1e4be4ac827184056a18d3d9353c8aaa",
+    "dest": "goproxy/github.com/hanwen/go-fuse/v2/@v",
+    "dest-filename": "v2.11.0.mod"
+  },
+  {
+    "type": "file",
+    "url": "https://proxy.golang.org/github.com/hanwen/go-fuse/v2/@v/v2.11.0.zip",
+    "sha256": "0e68bc0c0c1a570d9c5f7d09a1fdc6fdc9c7030a85638565734bd971c8cf553b",
+    "dest": "goproxy/github.com/hanwen/go-fuse/v2/@v",
+    "dest-filename": "v2.11.0.zip"
+  },
+  {
+    "type": "file",
     "url": "https://proxy.golang.org/github.com/johannesboyne/gofakes3/@v/v1.2.0.mod",
     "sha256": "59b47f2c82132af0cb262c943c52313b472cd814d876b6abaf37a1cc6d2140cf",
     "dest": "goproxy/github.com/johannesboyne/gofakes3/@v",
@@ -334,6 +362,34 @@
     "sha256": "0e462c181a8796aa3d9293cfc25451d204d9887a7e8876b100d446c85493ca84",
     "dest": "goproxy/github.com/johannesboyne/gofakes3/@v",
     "dest-filename": "v1.2.0.zip"
+  },
+  {
+    "type": "file",
+    "url": "https://proxy.golang.org/github.com/kylelemons/godebug/@v/v1.1.0.mod",
+    "sha256": "1605871e895331a39f5952559ebbc91228d86b8100354f857b562866eca5bb13",
+    "dest": "goproxy/github.com/kylelemons/godebug/@v",
+    "dest-filename": "v1.1.0.mod"
+  },
+  {
+    "type": "file",
+    "url": "https://proxy.golang.org/github.com/kylelemons/godebug/@v/v1.1.0.zip",
+    "sha256": "dbbd0ce8c2f4932bb03704d73026b21af12bd68d5b8f4798dbf10a487a2b6d13",
+    "dest": "goproxy/github.com/kylelemons/godebug/@v",
+    "dest-filename": "v1.1.0.zip"
+  },
+  {
+    "type": "file",
+    "url": "https://proxy.golang.org/github.com/moby/sys/mountinfo/@v/v0.7.2.mod",
+    "sha256": "a2c5ccab447263f7b912af5adf3c1586c300d9169564adcaf2d911dc17d301c4",
+    "dest": "goproxy/github.com/moby/sys/mountinfo/@v",
+    "dest-filename": "v0.7.2.mod"
+  },
+  {
+    "type": "file",
+    "url": "https://proxy.golang.org/github.com/moby/sys/mountinfo/@v/v0.7.2.zip",
+    "sha256": "94f79687bc3b72ca4cc60fafda851454fefc0ef04bdb4499e8c7c2b2e231b5d3",
+    "dest": "goproxy/github.com/moby/sys/mountinfo/@v",
+    "dest-filename": "v0.7.2.zip"
   },
   {
     "type": "file",

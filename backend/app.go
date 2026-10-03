@@ -32,6 +32,14 @@ type App struct {
 	nextID       atomic.Int64
 	transfersMu  sync.Mutex
 	transferJobs map[int64]*transferTask
+	// Queue state, guarded by transfersMu.
+	transfersPaused    bool
+	transfersRunning   int
+	transferFront      int64 // sequence numbers below every queued task
+	enqueuedSinceEvict int
+	bandwidth          bandwidthLimiter
+	queueLimit         int   // copy of settings.TransferLimit for the queue
+	queueBandwidth     int64 // copy of settings.BandwidthKBps for the queue
 	// emitEvent sends an event to the frontend (replaceable in tests).
 	emitEvent func(name string, data any)
 
@@ -39,11 +47,21 @@ type App struct {
 
 	backupOnce  sync.Once
 	backupStore *backupStore
+
+	// Objects opened in an external application, by bucket and key.
+	editsMu sync.Mutex
+	edits   map[string]*externalEdit
+
+	// Buckets attached to the local file system, by mount ID.
+	mountsMu sync.Mutex
+	mounts   map[string]*bucketMount
 }
 
 func NewApp() *App {
 	a := &App{store: newProfileStore()}
 	a.settings = loadSettings(a.store)
+	a.bandwidth.setLimit(a.settings.BandwidthKBps * 1024)
+	a.queueLimit, a.queueBandwidth = a.settings.TransferLimit, a.settings.BandwidthKBps
 	a.emitEvent = func(name string, data any) { runtime.EventsEmit(a.ctx, name, data) }
 	return a
 }
@@ -522,13 +540,18 @@ func (a *App) PreviewText(bucket, key string) (string, error) {
 }
 
 type TransferEvent struct {
-	ID    int64  `json:"id"`
-	Kind  string `json:"kind"` // upload | download | copy | move | sync
-	Name  string `json:"name"`
-	Done  int64  `json:"done"`
-	Total int64  `json:"total"`
-	State string `json:"state"` // running | done | error | cancelled
-	Error string `json:"error"`
+	ID    int64   `json:"id"`
+	Kind  string  `json:"kind"` // upload | download | copy | move | sync
+	Name  string  `json:"name"`
+	Done  int64   `json:"done"`
+	Total int64   `json:"total"`
+	State string  `json:"state"` // queued | running | done | error | cancelled
+	Error string  `json:"error"`
+	Speed int64   `json:"speed"` // bytes per second while running
+	Order float64 `json:"order"` // queue position; lower runs first
+	// Quiet transfers happen as a side effect of using a mount or an external
+	// editor; they are listed but never announced with a desktop notification.
+	Quiet bool `json:"quiet"`
 }
 
 type progressReader struct {
@@ -536,11 +559,21 @@ type progressReader struct {
 	n    int64
 	last time.Time
 	emit func(int64)
+	// Set when the transfer rate is capped; reads wait for their share.
+	limiter *bandwidthLimiter
+	ctx     context.Context
 }
 
 func (p *progressReader) Read(b []byte) (int, error) {
+	// The SDK reads multi-megabyte parts; smaller reads keep a capped rate smooth.
+	if p.limiter != nil && len(b) > 64<<10 {
+		b = b[:64<<10]
+	}
 	n, err := p.r.Read(b)
 	p.n += int64(n)
+	if p.limiter != nil {
+		p.limiter.wait(p.ctx, n)
+	}
 	if time.Since(p.last) > 150*time.Millisecond {
 		p.last = time.Now()
 		p.emit(p.n)
@@ -580,7 +613,7 @@ func (a *App) UploadPaths(bucket, prefix string, paths []string) (int, error) {
 	}
 	b := a.startBatch("upload", len(jobs))
 	defer b.end()
-	if failed := a.runUploads(c, bucket, jobs, b); failed > 0 {
+	if failed := a.runUploads(c, bucket, jobs, b, a.activeUploadOptions()); failed > 0 {
 		return len(jobs) - failed, b.failure("uploadFailed")
 	}
 	return len(jobs), nil
@@ -626,31 +659,36 @@ func collectUploads(prefix string, paths []string) ([]uploadJob, error) {
 	return jobs, nil
 }
 
-// runUploads uploads the jobs four at a time and returns how many failed.
-func (a *App) runUploads(c *s3.Client, bucket string, jobs []uploadJob, b *batch) int {
+// runUploads queues the jobs on the shared transfer queue and returns how many failed.
+func (a *App) runUploads(c *s3.Client, bucket string, jobs []uploadJob, b *batch, opts uploadOptions) int {
 	up := manager.NewUploader(c, func(u *manager.Uploader) { u.PartSize = 8 << 20 })
-	sem := make(chan struct{}, 4)
-	var wg sync.WaitGroup
-	var failed atomic.Int64
-	for _, j := range jobs {
-		wg.Add(1)
-		sem <- struct{}{}
-		go func(j uploadJob) {
-			defer wg.Done()
-			defer func() { <-sem }()
-			err := a.uploadOne(up, b.ev.Kind, bucket, j.local, j.key)
-			b.finish(err)
-			if err != nil {
-				failed.Add(1)
-			}
-		}(j)
+	tasks := make([]*transferTask, len(jobs))
+	for i, j := range jobs {
+		tasks[i] = a.queueUpload(up, b.ev.Kind, bucket, j, opts)
 	}
-	wg.Wait()
-	return int(failed.Load())
+	failed := 0
+	for _, task := range tasks {
+		err := task.wait()
+		b.finish(err)
+		if err != nil {
+			failed++
+		}
+	}
+	return failed
 }
 
-func (a *App) uploadOne(up *manager.Uploader, kind, bucket, local, key string) error {
-	return a.startTransfer(kind, key, func(ctx context.Context, progress func(int64, int64)) error {
+func (a *App) queueUpload(up *manager.Uploader, kind, bucket string, j uploadJob, opts uploadOptions) *transferTask {
+	return a.enqueueTransfer(kind, j.key, j.size, a.uploadRun(up, bucket, j, opts))
+}
+
+// queueUploadQuiet is queueUpload for uploads the desktop must not announce.
+func (a *App) queueUploadQuiet(up *manager.Uploader, kind, bucket string, j uploadJob, opts uploadOptions) *transferTask {
+	return a.enqueueQuiet(kind, j.key, j.size, a.uploadRun(up, bucket, j, opts))
+}
+
+func (a *App) uploadRun(up *manager.Uploader, bucket string, j uploadJob, opts uploadOptions) func(context.Context, func(int64, int64)) error {
+	local, key := j.local, j.key
+	return func(ctx context.Context, progress func(int64, int64)) error {
 		f, err := os.Open(local)
 		if err != nil {
 			return err
@@ -661,16 +699,16 @@ func (a *App) uploadOne(up *manager.Uploader, kind, bucket, local, key string) e
 			return err
 		}
 		progress(0, st.Size())
-		pr := &progressReader{r: f, emit: func(n int64) { progress(n, st.Size()) }}
+		pr := &progressReader{r: f, emit: func(n int64) { progress(n, st.Size()) }, limiter: &a.bandwidth, ctx: ctx}
 		ct := mime.TypeByExtension(path.Ext(key))
 		if ct == "" {
 			ct = "application/octet-stream"
 		}
-		_, err = up.Upload(ctx, &s3.PutObjectInput{
-			Bucket: aws.String(bucket), Key: aws.String(key), Body: pr, ContentType: aws.String(ct),
-		})
+		in := &s3.PutObjectInput{Bucket: aws.String(bucket), Key: aws.String(key), Body: pr, ContentType: aws.String(ct)}
+		opts.apply(in)
+		_, err = up.Upload(ctx, in)
 		return err
-	})
+	}
 }
 
 // Download saves objects/folders. With a single plain object a save dialog is
@@ -730,25 +768,20 @@ func (a *App) Download(bucket, prefix string, keys []string) (int, error) {
 	}
 	b := a.startBatch("download", len(targets))
 	defer b.end()
-	sem := make(chan struct{}, 4)
-	var wg sync.WaitGroup
-	var failed atomic.Int64
-	for _, target := range targets {
-		wg.Add(1)
-		sem <- struct{}{}
-		go func(k, dst string) {
-			defer wg.Done()
-			defer func() { <-sem }()
-			err := a.downloadTo(c, bucket, k, dir, dst)
-			b.finish(err)
-			if err != nil {
-				failed.Add(1)
-			}
-		}(target.key, target.name)
+	tasks := make([]*transferTask, len(targets))
+	for i, target := range targets {
+		tasks[i] = a.queueDownload(c, bucket, target.key, "", dir, target.name)
 	}
-	wg.Wait()
-	if f := failed.Load(); f > 0 {
-		return len(targets) - int(f), b.failure("downloadFailed")
+	failed := 0
+	for _, task := range tasks {
+		err := task.wait()
+		b.finish(err)
+		if err != nil {
+			failed++
+		}
+	}
+	if failed > 0 {
+		return len(targets) - failed, b.failure("downloadFailed")
 	}
 	return len(targets), nil
 }
@@ -763,10 +796,17 @@ func (a *App) downloadTo(c *s3.Client, bucket, key, directory, name string) erro
 
 // downloadVersionTo saves one version of an object; an empty version is the current one.
 func (a *App) downloadVersionTo(c *s3.Client, bucket, key, version, directory, name string) error {
-	return a.startTransfer("download", key, func(ctx context.Context, progress func(int64, int64)) error {
+	return a.queueDownload(c, bucket, key, version, directory, name).wait()
+}
+
+func (a *App) queueDownload(c *s3.Client, bucket, key, version, directory, name string) *transferTask {
+	return a.enqueueTransfer("download", key, 0, func(ctx context.Context, progress func(int64, int64)) error {
 		in := &s3.GetObjectInput{Bucket: aws.String(bucket), Key: aws.String(key)}
 		if version != "" {
 			in.VersionId = aws.String(version)
+		}
+		if done, err := a.downloadSegmented(ctx, c, in, directory, name, progress); done {
+			return err
 		}
 		out, err := c.GetObject(ctx, in)
 		if err != nil {
@@ -775,9 +815,19 @@ func (a *App) downloadVersionTo(c *s3.Client, bucket, key, version, directory, n
 		defer out.Body.Close()
 		total := aws.ToInt64(out.ContentLength)
 		progress(0, total)
-		pr := &progressReader{r: out.Body, emit: func(n int64) { progress(n, total) }}
-		return saveDownload(ctx, directory, name, pr)
+		pr := &progressReader{r: out.Body, emit: func(n int64) { progress(n, total) }, limiter: &a.bandwidth, ctx: ctx}
+		return saveDownload(ctx, directory, name, pr, verifiableMD5(aws.ToString(out.ETag), out.ServerSideEncryption))
 	})
+}
+
+// verifiableMD5 returns the MD5 an object's ETag carries when it was stored
+// in one part without KMS; multipart and KMS-encrypted objects cannot be checked.
+func verifiableMD5(etag string, encryption types.ServerSideEncryption) string {
+	expected := strings.Trim(etag, "\"")
+	if len(expected) != 32 || strings.Contains(expected, "-") || encryption == types.ServerSideEncryptionAwsKms {
+		return ""
+	}
+	return expected
 }
 
 func (a *App) CopyToClipboard(text string) error {
@@ -798,3 +848,53 @@ func copySource(bucket, key string) string {
 	}
 	return bucket + "/" + strings.Join(parts, "/")
 }
+
+// downloadSegmented fetches a large object as parallel byte ranges. It
+// reports false when the object is small or the service does not serve
+// ranges, so the caller falls back to one request.
+func (a *App) downloadSegmented(ctx context.Context, c *s3.Client, in *s3.GetObjectInput, directory, name string, progress func(int64, int64)) (bool, error) {
+	head, err := c.HeadObject(ctx, &s3.HeadObjectInput{Bucket: in.Bucket, Key: in.Key, VersionId: in.VersionId})
+	if err != nil {
+		return false, nil
+	}
+	size := aws.ToInt64(head.ContentLength)
+	if size < segmentedMinSize || (head.AcceptRanges != nil && aws.ToString(head.AcceptRanges) != "bytes") {
+		return false, nil
+	}
+	progress(0, size)
+	fetch := func(ctx context.Context, start, end int64) (io.ReadCloser, error) {
+		part := *in
+		part.Range = aws.String(fmt.Sprintf("bytes=%d-%d", start, end))
+		if etag := aws.ToString(head.ETag); etag != "" {
+			part.IfMatch = aws.String(etag) // a changed object must not be stitched from two versions
+		}
+		out, err := c.GetObject(ctx, &part)
+		if err != nil {
+			return nil, err
+		}
+		// A service that ignores Range answers with the whole object, or without a length.
+		if out.ContentLength == nil || aws.ToInt64(out.ContentLength) != end-start+1 || out.ContentRange == nil {
+			out.Body.Close()
+			return nil, errRangeUnsupported
+		}
+		return &limitedBody{ReadCloser: out.Body, pr: &progressReader{r: out.Body, emit: func(int64) {}, limiter: &a.bandwidth, ctx: ctx}}, nil
+	}
+	err = saveSegmented(ctx, directory, name, size, fetch, func(n int64) { progress(n, size) }, verifiableMD5(aws.ToString(head.ETag), head.ServerSideEncryption))
+	if errors.Is(err, errRangeUnsupported) {
+		return false, nil // one plain request instead
+	}
+	if err == nil {
+		progress(size, size)
+	}
+	return true, err
+}
+
+var errRangeUnsupported = errors.New("range requests are not supported")
+
+// limitedBody reads through the bandwidth limiter and closes the response.
+type limitedBody struct {
+	io.ReadCloser
+	pr *progressReader
+}
+
+func (b *limitedBody) Read(p []byte) (int, error) { return b.pr.Read(p) }
