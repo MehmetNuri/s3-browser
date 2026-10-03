@@ -203,7 +203,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends flatpak flatpak-builder python3-yaml
+      # elfutils provides eu-strip, which flatpak-builder runs on the built binaries.
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends flatpak flatpak-builder elfutils python3-yaml
       - run: flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
       - name: Write a manifest that builds the checkout
         run: |
