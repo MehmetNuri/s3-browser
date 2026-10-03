@@ -2,11 +2,23 @@
 
 A desktop client for Amazon S3, Supabase Storage, MinIO, Cloudflare R2 and other S3-compatible services. Built with Electron, Svelte 5, TypeScript and Go. The interface supports English and Turkish.
 
-![Browsing a bucket with an image preview](docs/screenshots/browser.png)
+![Browsing a bucket](docs/screenshots/browser.png)
 
-| Storage analyzer | Backup jobs | Command palette |
-| --- | --- | --- |
-| ![Storage analyzer](docs/screenshots/analyzer.png) | ![Backup jobs](docs/screenshots/backups.png) | ![Command palette](docs/screenshots/command-palette.png) |
+## Screenshots
+
+| | |
+| --- | --- |
+| **Transfer queue** — concurrency and bandwidth limits, pause, reorder, retry ![Transfer queue](docs/screenshots/transfers.png) | **Bucket settings** — encryption, Object Lock, public access, versioning ![Bucket settings](docs/screenshots/bucket-settings.png) |
+| **Lifecycle rules** — JSON editors for policy, CORS and lifecycle with examples ![Lifecycle rules](docs/screenshots/bucket-lifecycle.png) | **Object settings** — storage class, permissions, tags, metadata ![Object settings](docs/screenshots/object-settings.png) |
+| **Mounted bucket** — the bucket as a folder in the file manager ![Mount](docs/screenshots/mount.png) | **Connections** — presets for many S3-compatible providers ![New connection](docs/screenshots/connection.png) |
+| **Storage analyzer** — space by folder, type, age and class, duplicates ![Storage analyzer](docs/screenshots/analyzer.png) | **Backup jobs** — scheduled folder-to-bucket syncs ![Backup jobs](docs/screenshots/backups.png) |
+| **Command palette** — Ctrl+K for connections, buckets, files and commands ![Command palette](docs/screenshots/command-palette.png) | **S3 capabilities** — which API calls your provider really supports ![S3 capabilities](docs/screenshots/capabilities.png) |
+| **Image preview** — previews and object details in the side panel ![Image preview](docs/screenshots/image-preview.png) | **Versions** — list, download, restore and delete object versions ![Versions](docs/screenshots/versions.png) |
+| **HTTP headers** — Content-Type, Cache-Control, Content-Disposition, Content-Encoding ![Edit headers](docs/screenshots/headers.png) | **Copy to another connection** — also across providers and accounts ![Copy to](docs/screenshots/copy-to.png) |
+| **Folder sync** — upload or download direction, with optional mirroring ![Folder sync](docs/screenshots/sync.png) | **Upload menu** — files, folders or drag and drop ![Upload menu](docs/screenshots/upload-menu.png) |
+| **Light theme** — follows the system theme ![Light theme](docs/screenshots/light-theme.png) | **Turkish interface** — English and Turkish, switchable at runtime ![Turkish](docs/screenshots/turkish.png) |
+
+All screenshots were taken against a local S3-compatible test server with demo data.
 
 ## Features
 
